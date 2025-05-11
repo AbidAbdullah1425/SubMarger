@@ -8,6 +8,7 @@ from pyrogram.types import Message
 logger = logging.getLogger(__name__)
 
 # Shared data dictionaries
+global_mode = AUTO_MODE
 user_data: Dict[int, Dict[str, Any]] = {}
 user_tasks: Dict[int, asyncio.Task] = {}
 
