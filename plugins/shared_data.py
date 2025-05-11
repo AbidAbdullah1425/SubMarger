@@ -84,8 +84,8 @@ def get_current_mode(user_id: int = None) -> str:
     return global_mode
 
 def is_auto_mode(user_id: int = None) -> bool:
-    """Check if in auto mode"""
-    return get_current_mode(user_id) == AUTO_MODE
+    """Check if in auto mode (global for all users)"""
+    return get_current_mode() == AUTO_MODE
 
 def switch_mode(user_id: int = None) -> str:
     """Switch between auto and manual modes"""
