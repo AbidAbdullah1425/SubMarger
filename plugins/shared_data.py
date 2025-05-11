@@ -88,18 +88,11 @@ def is_auto_mode(user_id: int = None) -> bool:
     return get_current_mode() == AUTO_MODE
 
 def switch_mode(user_id: int = None) -> str:
-    """Switch between auto and manual modes"""
-    if user_id is not None:
-        user_data = get_user_data(user_id)
-        current_mode = user_data.get("mode", AUTO_MODE)
-        new_mode = MANUAL_MODE if current_mode == AUTO_MODE else AUTO_MODE
-        user_data["mode"] = new_mode
-        logger.info(f"Mode switched to {new_mode} for user {user_id}")
-    else:
-        current_mode = get_current_mode()
-        new_mode = MANUAL_MODE if current_mode == AUTO_MODE else AUTO_MODE
-        user_data["global_mode"] = new_mode
-        logger.info(f"Global mode switched to {new_mode}")
+    """Switch between auto and manual modes (global for all users)"""
+    global global_mode
+    new_mode = MANUAL_MODE if global_mode == AUTO_MODE else AUTO_MODE
+    global_mode = new_mode
+    logger.info(f"Global mode switched to {new_mode}")
     return new_mode
 
 def is_task_running(user_id: int) -> bool:
