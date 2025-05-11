@@ -79,10 +79,9 @@ def register_task(user_id: int, task: asyncio.Task) -> None:
         logger.error(f"Error registering task for user {user_id}: {str(e)}")
 
 def get_current_mode(user_id: int = None) -> str:
-    """Get the current mode for a user or global mode"""
-    if user_id is not None:
-        return get_user_data(user_id).get("mode", AUTO_MODE)
-    return user_data.get("global_mode", AUTO_MODE)
+    """Get the current mode (global for all users)"""
+    global global_mode
+    return global_mode
 
 def is_auto_mode(user_id: int = None) -> bool:
     """Check if in auto mode"""
