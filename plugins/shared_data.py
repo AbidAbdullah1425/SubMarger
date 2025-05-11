@@ -7,14 +7,14 @@ from pyrogram.types import Message
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# Mode constants
+AUTO_MODE = "auto"
+MANUAL_MODE = "manual"
+
 # Shared data dictionaries
 global_mode = AUTO_MODE
 user_data: Dict[int, Dict[str, Any]] = {}
 user_tasks: Dict[int, asyncio.Task] = {}
-
-# Mode constants
-AUTO_MODE = "auto"
-MANUAL_MODE = "manual"
 
 def get_user_data(user_id: int) -> Dict[str, Any]:
     """Get or create user data for a user"""
