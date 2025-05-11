@@ -7,7 +7,7 @@ from .shared_data import switch_mode, logger
 async def handle_mode_switch(client, message):
     """Switch between auto and manual processing modes (owner only)"""
     try:
-        new_mode = switch_mode(message.from_user.id)
+        new_mode = switch_mode()
         
         await message.reply(
             f"✅ Mode switched to: {new_mode.upper()}\n"
