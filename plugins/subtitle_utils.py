@@ -15,7 +15,7 @@ async def extract_subtitles(client, message, user_id):
         status_msg = await message.reply("Extracting subtitles...")
         logger.info(f"Extracting subtitles from {video_file}")
         
-        subprocess.run(["ffmpeg", "-i", video_file, "-map", "0:s:0", output_subtitle], check=True)
+        subprocess.run(["ffmpeg", "-i", video_file, "-map", "0:s:m:language:eng", "-map", "0:s:language:eng", "-map", "0:s:0", output_subtitle], check=True)
         logger.info(f"Subtitles extracted to {output_subtitle}")
 
         subprocess.run(["ffmpeg", "-i", output_subtitle, output_ass], check=True)
