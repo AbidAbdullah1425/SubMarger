@@ -1,4 +1,5 @@
 import os
+import json
 import subprocess
 import logging
 from datetime import datetime
@@ -46,7 +47,52 @@ async def merge_subtitles_task(client, message, user_id):
         # Initialize status messages
         status_msg = await message.reply("🔄 Processing video...")
 
-        # Update channel msg for processing
+        # Check video streams
+        probe_cmd = [
+            "ffprobe",
+            "-v", "quiet",
+            "-print_format", "json",
+            "-show_streams",
+            video
+        ]
+        probe_result = subprocess.run(probe_cmd, capture_output=True, text=True)
+        streams_info = json.loads(probe_result.stdout)
+        
+        # Count different types of streams
+        video_streams = [s for s in streams_info['streams'] if s['codec_type'] == 'video']
+        audio_streams = [s for s in streams_info['streams'] if s['codec_type'] == 'audio']
+        sub_streams = [s for s in streams_info['streams'] if s['codec_type'] == 'subtitle']
+
+        # Log stream information
+        logger.info(f"Found streams - Video: {len(video_streams)}, Audio: {len(audio_streams)}, Subtitle: {len(sub_streams)}")
+
+        # If multiple video streams found, handle them
+        if len(video_streams) > 1:
+            await safe_edit_message(status_msg, "🎥 Multiple video streams detected. Processing...")
+            if channel_msg:
+                await safe_edit_message(channel_msg, "Status: Handling multiple video streams...")
+
+            # Find default video stream
+            default_stream = 0
+            for idx, stream in enumerate(video_streams):
+                if stream.get('disposition', {}).get('default', 0) == 1:
+                    default_stream = idx
+                    break
+            
+            logger.info(f"Using video stream {default_stream} as default")
+
+            # Create intermediate file with only default video stream
+            temp_cmd = [
+                "ffmpeg", "-i", video,
+                "-map", f"0:v:{default_stream}",  # Default video stream
+                "-map", "0:a",  # All audio streams
+                "-c", "copy",
+                "-y", "temp_video.mkv"
+            ]
+            subprocess.run(temp_cmd, check=True)
+            video = "temp_video.mkv"
+
+        # Remove existing subtitles
         if channel_msg:
             channel_msg = await safe_edit_message(channel_msg, "Status: Removing existing subtitles...")
 
@@ -58,7 +104,7 @@ async def merge_subtitles_task(client, message, user_id):
         ]
         subprocess.run(remove_subs_cmd, check=True)
 
-        # Update status for merging
+        # Merge subtitles
         status_msg = await safe_edit_message(status_msg, "🔄 Merging subtitles...")
         if channel_msg:
             channel_msg = await safe_edit_message(channel_msg, "Status: Merging subtitles and fonts...")
@@ -186,8 +232,9 @@ async def merge_subtitles_task(client, message, user_id):
     finally:
         # Cleanup
         try:
-            if os.path.exists("removed_subtitles.mkv"):
-                os.remove("removed_subtitles.mkv")
+            for temp_file in ["removed_subtitles.mkv", "temp_video.mkv"]:
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
             cleanup(user_id)
         except Exception as e:
             logger.error(f"Cleanup error: {e}")
