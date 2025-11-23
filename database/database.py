@@ -8,7 +8,7 @@ class MongoDB:
   
   
   async def get_settings(self):
-    data = self.collection.find_one({"_id": "bot_settings"})
+    data = await self.collection.find_one({"_id": "bot_settings"})
     return data or {}
   
   async def update_settings(self, key, value):
