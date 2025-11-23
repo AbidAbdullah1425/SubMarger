@@ -22,7 +22,7 @@ STICKER_ID = os.environ.get("STICKER_ID", "CAACAgUAAxkBAAIJZGfLOdpxPmkKJ_nlJICh0
 PORT = os.environ.get("PORT", "8080")
 TG_BOT_WORKERS = int(os.environ.get("TG_BOT_WORKERS", "1"))
 LOG_FILE_NAME = "filesharingbot.txt"
-START_PHOTO = "https://envs.sh/-Dw.jpg"
+START_PHOTO = "https://envs.sh/-s2.jpg"
 START_MSG = "ᴡᴇʟᴄᴏᴍᴇ ᴏɴʟʏɴᴏᴄᴏ,sᴇɴᴅ ᴛʜᴇ ᴠɪᴅᴇᴏ ғɪʟᴇ ᴀɴᴅ sᴇʟᴇᴄᴛ ᴛʜᴇ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴍᴇ ᴛᴏ ᴅᴏ ғᴏʀ ᴜ"
 logging.basicConfig(
     level=logging.INFO,
