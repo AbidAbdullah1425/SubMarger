@@ -3,11 +3,11 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, ForceReply
 from bot import Bot
 from config import OWNER_ID, FONT, DOWNLOAD_DIR
-from .start import media_obj_store
-from .progressbar import progress_bar
-from .cleanup import cleanup_system
-from .ffmpeg import run_cmd
-from .core.change_sub_format import change_sub_format
+from plugins.start import media_obj_store
+from plugins.progressbar import progress_bar
+from plugins.cleanup import cleanup_system
+from plugins.ffmpeg import run_cmd
+from plugins.core.change_sub_format import change_sub_format
 
 # --- pending reply & video cache ---
 pending_sub_reply = {}
