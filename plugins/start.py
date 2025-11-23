@@ -38,8 +38,8 @@ async def start_message(client: Client, message: Message):
     )
 
 @Bot.on_message(
-    filters.user(OWNER_ID) &  
-    (filters.video | (filters.document & filters.document.file_name.regex(r".*\.(mp4|mkv|webm)$")))
+    filters.user(OWNER_ID) &
+    (filters.video | (filters.document & filters.create(lambda _, __, m: m.document and (m.document.file_name.endswith((".mp4", ".mkv", ".webm"))))))
 )
 async def media_receiver(client: Client, message: Message): 
     media_obj_store[message.from_user.id] = message  # save file data
@@ -122,7 +122,7 @@ async def force_reply_episode(client: Bot, message: Message):
 # Subtitle receiver
 @Bot.on_message(
     filters.user(OWNER_ID) &
-    (filters.document & filters.document.file_name.regex(r".*\.(srt|ass)$"))
+    (filters.document & filters.create(lambda _, __, m: m.document and (m.document.file_name.endswith((".srt", ".ass")))))
 )
 async def subtitle_receiver(client: Client, message: Message):
     media_obj_store[message.from_user.id] = message  # save file data
