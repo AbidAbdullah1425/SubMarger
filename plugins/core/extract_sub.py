@@ -22,9 +22,6 @@ async def extract_subtitle_using_ffmpeg(client: Client, query: CallbackQuery):
     video_message = media_obj_store[user_id]
     start_time = time.time()
 
-    # cleanup old messages
-    await cleanup_system(client, user_id)
-
     try:
         # reuse downloaded file if exists
         if not hasattr(video_message, "downloaded_file"):
