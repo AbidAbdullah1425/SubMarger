@@ -1,29 +1,34 @@
-import os
-import logging
-from pyrogram import filters
-from bot import Bot
-from config import OWNER_IDS, LOG_FILE_NAME
-from .video_handler import user_data, logger
+import os, gc, shutil, psutil, subprocess
 
-def cleanup(user_id):
-    if user_id in user_data:
-        data = user_data[user_id]
-        for key in ["video", "subtitle"]:
-            if key in data and os.path.exists(data[key]):
-                os.remove(data[key])
-        user_data.pop(user_id, None)
-        logger.info(f"Cleaned up data for user {user_id}")
+def cleanup_system(paths=None):
+    """Clean files, kill stray ffmpeg, free RAM."""
+    paths = paths or []
+   
+    for p in paths:
+      try:
+        if os.path.isdir(p):
+          shutil.rmtree(p, ignore_errors=True)
+          elif os.path.exists(p):
+            os.remove(p)
+        except Exception:
+          pass
 
-@Bot.on_message(filters.user(OWNER_IDS) & filters.command("cleanup"), group=0)
-async def clear_storage(client, message):
-    user_id = message.from_user.id
-    cleanup(user_id)
-    await message.reply("Storage has been cleared.")
+    # kill orphan ffmpeg/ffprobe
+    for proc in psutil.process_iter(["name"]):
+      try:
+        name = proc.info["name"].lower()
+          if "ffmpeg" in name or "ffprobe" in name:
+            proc.kill()
+        except Exception:
+            pass
 
-@Bot.on_message(filters.user(OWNER_IDS) & filters.command("logs"))
-async def get_log_file(client, message):
+    gc.collect()
+
     try:
-        await message.reply_document(document=LOG_FILE_NAME, caption="log file by SubMerger")
-    except Exception as e:
-        logger.error(f"Failed to send log file to OWNER: {e}")
-        await message.reply(f"Error:{e}")
+      subprocess.run(["sync"], check=False)
+      if os.path.exists("/proc/sys/vm/drop_caches"):
+        with open("/proc/sys/vm/drop_caches", "w") as f:
+          f.write("3\n")
+    except Exception:
+      pass
+

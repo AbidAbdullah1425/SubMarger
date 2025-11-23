@@ -7,7 +7,6 @@ WORKDIR /app
 # Install dependencies in one layer, clean up thoroughly
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
-    git \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/* /tmp/*
 
 # Copy requirements first for caching
