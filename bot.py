@@ -60,7 +60,7 @@ class Bot(Client):
         self.set_parse_mode(ParseMode.HTML)
 
         # Log bot banner
-        self.LOGGER(__name__).info()
+        self.LOGGER(__name__).info("ONLYNOCO")
 
         # Start web server
         try:
