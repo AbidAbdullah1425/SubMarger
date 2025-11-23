@@ -47,7 +47,7 @@ async def convert_sub_callback(client: Client, query: CallbackQuery):
     start_time = time.time()  
     try:  
         sub_path = await video_msg.download(  
-            dir=DOWNLOAD_DIR,  
+            file_name=DOWNLOAD_DIR,  
             progress=progress_bar,  
             progress_args=(start_time, query.message, "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ sᴜʙᴛɪᴛʟᴇ...")  
         )  
