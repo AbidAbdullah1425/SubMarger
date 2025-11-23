@@ -4,7 +4,9 @@ import shutil
 import psutil
 import subprocess
 
-def cleanup_system(paths=None):
+
+    
+def cleanup_system(paths=None, remove_dirs=True):
     """Clean files, kill stray ffmpeg, free RAM."""
     paths = paths or []
 
@@ -15,6 +17,13 @@ def cleanup_system(paths=None):
                 shutil.rmtree(p, ignore_errors=True)
             elif os.path.exists(p):
                 os.remove(p)
+        except Exception:
+            pass
+
+    # Remove download dirs by default
+    if remove_dirs:
+        try:
+            shutil.rmtree(DOWNLOAD_DIR, ignore_errors=True)
         except Exception:
             pass
 
