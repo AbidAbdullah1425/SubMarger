@@ -6,6 +6,8 @@ from logging.handlers import RotatingFileHandler
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "0")
 API_ID = int(os.environ.get("API_ID", "26254064"))
 API_HASH = os.environ.get("API_HASH", "72541d6610ae7730e6135af9423b319c")
+DB_URI = os.environ.get("DATABASE_URL", "mongodb+srv://teamprosperpay:AbidAbdullah199@cluster0.z93fita.mongodb.net/")
+DB_NAME = os.environ.get("DATABASE_NAME", "SubMargerBot")
 THUMB = "Assist/Images/thumbnail.jpg"
 FILENAME = "[{episode}] Battle Through The Heavens 720p @HeavenlySubs.mkv"
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "HeavenlySubsBot")
