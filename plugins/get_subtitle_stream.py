@@ -1,4 +1,4 @@
-from ffmpeg import run_cmd
+from plugins.ffmpeg import run_cmd
 
 
 
