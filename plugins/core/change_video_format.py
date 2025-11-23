@@ -2,7 +2,7 @@ import os, time, asyncio
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from bot import Bot
-from config import OWNER_ID, FILENAME
+from config import OWNER_ID
 from plugins.start import media_obj_store  # correct relative import
 from plugins.progressbar import progress_bar
 from plugins.cleanup import cleanup_system
@@ -73,7 +73,7 @@ async def convert_video_format(client: Client, query: CallbackQuery):
     await cleanup_system(client, user_id)
 
     # build new filename
-    new_filename = f"{FILENAME}.{target_ext}"
+    new_filename = f"{client.filename}.{target_ext}"
     output_path = os.path.join(os.path.dirname(input_path), new_filename)
 
     # notify user
