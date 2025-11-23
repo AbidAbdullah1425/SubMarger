@@ -39,14 +39,14 @@ async def start_message(client: Client, message: Message):
 
 @Bot.on_message(
     filters.user(OWNER_ID) &  
-    (filters.video | (filters.document & filters.create(lambda _, __, m: m.document and (m.document.file_name.endswith((".mp4", ".mkv", ".webm"))))))
+    (filters.video | (filters.document & filters.document.file_name.regex(r".*\.(mp4|mkv|webm)$")))
 )
 async def media_receiver(client: Client, message: Message): 
-    media_obj_store[message.from_user.id] = message  # save file data for later callback usage
+    media_obj_store[message.from_user.id] = message  # save file data
 
     await client.send_photo(
         chat_id=message.chat.id,
-        caption=f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {getattr(client, 'thumb', '')}\n~ ғɪʟᴇɴᴀᴍᴇ - {getattr(client, 'filename', '')}\n~ ᴇᴘɪsᴏᴅᴇ - {getattr(client, 'episode', 1)}",
+        caption=f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}",
         photo=START_PHOTO,
         reply_markup = InlineKeyboardMarkup([
             [
@@ -73,7 +73,7 @@ async def media_receiver(client: Client, message: Message):
         parse_mode=ParseMode.HTML
     )
 
-# Callback for episode control
+# Episode callbacks
 @Bot.on_callback_query(filters.regex("^(ep_add|ep_sub|ep_set|ep_cancel)$") & filters.user(OWNER_ID))
 async def episode_control(client: Bot, query):
     await query.answer()
@@ -82,30 +82,24 @@ async def episode_control(client: Bot, query):
     if action == "ep_add":
         client.episode += 1
         await client.update_setting("episode", client.episode)
-        await query.message.edit_caption(
-            f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {getattr(client, 'thumb', '')}\n~ ғɪʟᴇɴᴀᴍᴇ - {getattr(client, 'filename', '')}\n~ ᴇᴘɪsᴏᴅᴇ - {getattr(client, 'episode', 1)}"
-        )
-
     elif action == "ep_sub":
         client.episode = max(client.episode - 1, 0)
         await client.update_setting("episode", client.episode)
-        await query.message.edit_caption(
-            f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {getattr(client, 'thumb', '')}\n~ ғɪʟᴇɴᴀᴍᴇ - {getattr(client, 'filename', '')}\n~ ᴇᴘɪsᴏᴅᴇ - {getattr(client, 'episode', 1)}"
-        )
-
     elif action == "ep_set":
         client.pending_episode_msg = query.message.message_id
         await query.message.edit_caption(
-            f"sᴇᴛ ᴀ ɴᴇᴡ ᴠᴀʟᴜᴇ ғᴏʀ ᴛʜᴇ ᴇᴘɪsᴏᴅᴇ\nᴄᴜʀʀᴇɴᴛ: {getattr(client, 'episode', 1)}",
+            f"sᴇᴛ ᴀ ɴᴇᴡ ᴠᴀʟᴜᴇ ғᴏʀ ᴛʜᴇ ᴇᴘɪsᴏᴅᴇ\nᴄᴜʀʀᴇɴᴛ: {client.episode}",
             reply_markup=ForceReply(True)
         )
-
+        return
     elif action == "ep_cancel":
         if hasattr(client, "pending_episode_msg"):
             del client.pending_episode_msg
-        await query.message.edit_caption(
-            f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {getattr(client, 'thumb', '')}\n~ ғɪʟᴇɴᴀᴍᴇ - {getattr(client, 'filename', '')}\n~ ᴇᴘɪsᴏᴅᴇ - {getattr(client, 'episode', 1)}"
-        )
+
+    # Update caption after add/sub/cancel
+    await query.message.edit_caption(
+        f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}"
+    )
 
 # ForceReply handler
 @Bot.on_message(filters.user(OWNER_ID) & filters.reply)
@@ -119,7 +113,7 @@ async def force_reply_episode(client: Bot, message: Message):
         await client.update_setting("episode", client.episode)
         del client.pending_episode_msg
         await reply_msg.edit_caption(
-            f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {getattr(client, 'thumb', '')}\n~ ғɪʟᴇɴᴀᴍᴇ - {getattr(client, 'filename', '')}\n~ ᴇᴘɪsᴏᴅᴇ - {getattr(client, 'episode', 1)}"
+            f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}"
         )
         await message.reply(f"ᴜᴘᴅᴀᴛᴇᴅ ᴛᴏ {client.episode}")
     except ValueError:
@@ -128,10 +122,10 @@ async def force_reply_episode(client: Bot, message: Message):
 # Subtitle receiver
 @Bot.on_message(
     filters.user(OWNER_ID) &
-    (filters.document & filters.create(lambda _, __, m: m.document and (m.document.file_name.endswith((".srt", ".ass")))))
+    (filters.document & filters.document.file_name.regex(r".*\.(srt|ass)$"))
 )
 async def subtitle_receiver(client: Client, message: Message):
-    media_obj_store[message.from_user.id] = message  # save file data for later callback usage
+    media_obj_store[message.from_user.id] = message  # save file data
 
     await client.send_photo(
         chat_id=message.chat.id,
