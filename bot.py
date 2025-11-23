@@ -3,7 +3,7 @@ from plugins import web_server
 from pyrogram import Client
 from pyrogram.enums import ParseMode
 from datetime import datetime
-from database import MongoDB
+from database.database import MongoDB
 import pyrogram.utils
 import sys
 from config import (
