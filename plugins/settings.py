@@ -4,7 +4,7 @@ from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardBu
 from pyrogram.enums import ParseMode
 import asyncio
 from config import OWNER_ID
-from database.database import update_settings
+#from database.database import update_settings
 
 @Bot.on_message(filters.command("set_thumb") & filters.user(OWNER_ID))
 @Bot.on_callback_query(filters.regex("^set_thumb$") & filters.user(OWNER_ID))
