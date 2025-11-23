@@ -6,20 +6,26 @@ async def get_subtitle_streams(video_path: str):
     cmd = [
         "ffprobe", "-v", "error",
         "-select_streams", "s",
-        "-show_entries", "stream=index:stream_tags=language,title",
-        "-of", "csv=p=0",
+        "-show_entries", "stream=index:codec_name:tags",
+        "-of", "json",
         video_path
     ]
     rc, out, err = await run_cmd(cmd)
     if rc != 0:
         return []
+
+    import json
     streams = []
-    for line in out.strip().splitlines():
-        parts = line.split(',')
-        if parts:
+    try:
+        data = json.loads(out)
+        for s in data.get("streams", []):
             streams.append({
-                "index": parts[0],
-                "lang": parts[1] if len(parts) > 1 else "ᴜɴᴅ",
-                "title": parts[2] if len(parts) > 2 else "ᴜɴᴋɴᴏᴡɴ"
+                "index": str(s.get("index")),
+                "codec": s.get("codec_name", "unknown"),
+                "lang": s.get("tags", {}).get("language", "ᴜɴᴅ"),
+                "title": s.get("tags", {}).get("title", "ᴜɴᴋɴᴏᴡɴ")
             })
+    except Exception:
+        return []
+
     return streams
