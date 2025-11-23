@@ -2,7 +2,7 @@ import os, time
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, ForceReply
 from bot import Bot
-from config import OWNER_ID, FONT, FILENAME, DOWNLOAD_DIR
+from config import OWNER_ID, FONT, DOWNLOAD_DIR
 from .start import media_obj_store
 from .progressbar import progress_bar
 from .cleanup import cleanup_system
@@ -25,7 +25,7 @@ async def add_subtitle_request(client: Client, query: CallbackQuery):
     # download video only once per user
     if user_id not in video_paths:
         start_time = time.time()
-        video_name = FILENAME.format(episode=client.episode)
+        video_name = client.filename.format(episode=client.episode)
         video_path = os.path.join(DOWNLOAD_DIR, video_name)
         await media_obj_store[user_id].download(
             file_name=video_path,
