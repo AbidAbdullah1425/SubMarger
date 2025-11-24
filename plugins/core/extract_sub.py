@@ -34,13 +34,12 @@ async def extract_subtitle_using_ffmpeg(client: Client, query: CallbackQuery):
                 progress_args=(start_time, query.message, "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴍᴇᴅɪᴀ...")
             )
             log.info(f"Download complete: {video_message.downloaded_file}")
-        file_path = video_message.downloaded_file
 
-        log.info(f"Getting subtitle streams for file: {file_path}")
+        file_path = video_message.downloaded_file
         streams = await get_subtitle_streams(file_path)
         log.info(f"Subtitle streams found: {streams}")
+
         if not streams:
-            log.warning(f"No subtitle streams detected in file {file_path}")
             return await query.message.edit_text("⚠️ ɴᴏ sᴜʙᴛɪᴛʟᴇ ғᴏᴜɴᴅ.")
 
         buttons = [
@@ -51,15 +50,19 @@ async def extract_subtitle_using_ffmpeg(client: Client, query: CallbackQuery):
         log.info("Subtitle selection buttons sent to user")
 
     except Exception as e:
-        log.exception(f"Error during download or subtitle stream extraction: {e}")
-        await query.message.edit_text(f"❌ ᴇʀʀᴏʀ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ: {e}")
+        log.exception(f"Error during subtitle extraction: {e}")
+        await query.message.edit_text(f"❌ ᴇʀʀᴏʀ: {e}")
 
 
 # ----------- choose format ----------- #
 @Bot.on_callback_query(filters.regex("^subsel\\|") & filters.user(OWNER_ID))
 async def choose_format(client: Client, query: CallbackQuery):
     await query.answer()
-    _, file_path, stream_index = query.data.split("|")
+    try:
+        _, file_path, stream_index = query.data.split("|")
+    except ValueError:
+        return await query.message.edit_text("⚠️ Invalid callback data!")
+
     log.info(f"User {query.from_user.id} selected stream {stream_index} for file {file_path}")
 
     markup = InlineKeyboardMarkup([
@@ -69,7 +72,6 @@ async def choose_format(client: Client, query: CallbackQuery):
         ]
     ])
     await query.message.edit_text("🧩 sᴇʟᴇᴄᴛ ᴇxᴘᴏʀᴛ ғᴏʀᴍᴀᴛ:", reply_markup=markup)
-    log.info(f"Export format buttons sent for stream {stream_index}")
 
 
 # ----------- export subtitle ----------- #
@@ -84,35 +86,27 @@ async def export_subtitle(client: Client, query: CallbackQuery):
 
     output_path = file_path.rsplit(".", 1)[0] + f".{fmt}"
     log.info(f"Exporting subtitle: file={file_path}, stream={stream_index}, format={fmt}, output={output_path}")
-    status_msg = await query.message.edit_text(f"⚙️ ᴇxᴛʀᴀᴄᴛɪɴɢ {fmt.upper()}...", parse_mode=ParseMode.HTML)
 
+    status_msg = await query.message.edit_text(f"⚙️ ᴇxᴛʀᴀᴄᴛɪɴɢ {fmt.upper()}...", parse_mode=ParseMode.HTML)
     cmd = ["ffmpeg", "-y", "-i", file_path, "-map", f"0:s:{stream_index}", output_path]
-    log.info(f"Running ffmpeg command: {' '.join(cmd)}")
     rc, out, err = await run_cmd(cmd)
     log.info(f"FFmpeg returned code {rc}")
 
     if rc != 0 or not os.path.exists(output_path):
-        log.error(f"FFmpeg failed for {file_path} -> {output_path}, err={err}")
+        log.error(f"FFmpeg failed: {err}")
         await status_msg.edit_text(f"❌ ғᴀɪʟᴇᴅ!\n<code>{err[:800]}</code>", parse_mode=ParseMode.HTML)
         await cleanup_system(client, query.from_user.id, [output_path, file_path])
         return
 
     try:
-        if getattr(client, "thumb", None):
-            log.info(f"Sending subtitle file to user {query.from_user.id}")
-            await client.send_document(
-                query.from_user.id,
-                output_path,
-                thumb=client.thumb,
-                caption=f"Sᴜʙᴛɪᴛʟᴇ Exᴘᴏʀᴛᴇᴅ ({fmt.upper()})",
-                progress=progress_bar,
-                progress_args=(time.time(), query.message, "ᴜᴘʟᴏᴀᴅɪɴɢ ғɪʟᴇ...")
-            )
-            log.info(f"Subtitle sent successfully: {output_path}")
-        else:
-            log.warning("Thumbnail not set for sending document")
-            await status_msg.edit_text("⚠️ ᴛʜᴜᴍʙɴᴀɪʟ ɪsɴ'ᴛ sᴇᴛ")
-
+        await client.send_document(
+            query.from_user.id,
+            output_path,
+            thumb=getattr(client, "thumb", None),
+            caption=f"Sᴜʙᴛɪᴛʟᴇ Exᴘᴏʀᴛᴇᴅ ({fmt.upper()})",
+            progress=progress_bar,
+            progress_args=(time.time(), query.message, "ᴜᴘʟᴏᴀᴅɪɴɢ ғɪʟᴇ...")
+        )
         await status_msg.edit_text(f"✅ ᴇxᴛʀᴀᴄᴛɪᴏɴ sᴜᴄᴄᴇssғᴜʟʟ!")
 
     except Exception as e:
