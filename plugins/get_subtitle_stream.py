@@ -3,49 +3,46 @@ from plugins.ffmpeg import run_cmd
 from config import LOGGER
 import time
 
-log = LOGGER("SubtitleExtractor")
-
-async def get_subtitle_streams(video_path: str):
-    log.info(f"Starting subtitle extraction for: {video_path}")
-    start_time = time.time()
+async def get_subtitle_streams(video_path):
+    log.info(f"[GET_SUBS] Checking: {video_path}")
 
     cmd = [
         "ffprobe", "-v", "error",
+        "-print_format", "json",
+        "-show_streams",
         "-select_streams", "s",
-        "-show_entries", "stream=index,codec_name,tags",
-        "-of", "json",
         video_path
     ]
-    log.info(f"Running ffprobe command: {' '.join(cmd)}")
+    log.info(f"[FFPROBE CMD] {' '.join(cmd)}")
 
-    rc, out, err = await run_cmd(cmd)
-    elapsed = time.time() - start_time
+    ok, out, err = await run_cmd(cmd)
 
-    if rc != 0:
-        log.error(f"ffprobe failed (rc={rc}, time={elapsed:.2f}s): {err}")
+    if not ok:
+        log.error(f"[FFPROBE ERROR] {err}")
         return []
 
-    log.info(f"ffprobe completed in {elapsed:.2f}s. RAW JSON:\n{out}")
+    # Log raw ffprobe result (important)
+    log.info(f"[FFPROBE RAW] {out}")
 
     try:
         data = json.loads(out)
-    except json.JSONDecodeError as e:
-        log.error(f"JSON decode error: {e}\nRaw output: {out}")
+    except Exception as e:
+        log.error(f"[JSON ERROR] {e}")
         return []
 
-    streams = []
-    for s in data.get("streams", []):
-        tags = s.get("tags", {}) or {}
-        stream_info = {
+    streams = data.get("streams", [])
+    log.info(f"[STREAMS FOUND] {len(streams)}")
+
+    subs = []
+    for s in streams:
+        log.info(f"[STREAM META] {s}")  # full metadata for debugging
+
+        subs.append({
             "index": str(s.get("index")),
             "codec": s.get("codec_name", "unknown"),
-            "lang": tags.get("language", "und"),
-            "title": tags.get("title", "unknown")
-        }
-        log.info(f"Detected subtitle stream: {stream_info}")
-        streams.append(stream_info)
+            "lang": s.get("tags", {}).get("language", "und"),
+            "title": s.get("tags", {}).get("title", "unknown")
+        })
 
-    if not streams:
-        log.warning("No subtitle streams found in video.")
-
-    return streams
+    log.info(f"[SUB RESULT] {subs}")
+    return subs
