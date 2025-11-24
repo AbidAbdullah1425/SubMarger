@@ -10,7 +10,7 @@ from plugins.cleanup import cleanup_system
 from plugins.ffmpeg import run_cmd
 from plugins.get_subtitle_stream import get_subtitle_streams  # your function to get subtitle streams
 
-log = LOGGER("SubtitleExtractor")
+log = LOGGER("extract_sub.py")
 
 # ----------- extract subtitle callback ----------- #
 @Bot.on_callback_query(filters.regex("^extract_sub$") & filters.user(OWNER_ID))
