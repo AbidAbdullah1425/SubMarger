@@ -1,4 +1,7 @@
-import os, time, asyncio, base64
+import os
+import time
+import asyncio
+import uuid
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
@@ -12,123 +15,150 @@ from plugins.get_subtitle_stream import get_subtitle_streams
 
 log = LOGGER("extract_sub.py")
 
-
-def encode_path(path: str) -> str:
-    return base64.urlsafe_b64encode(path.encode()).decode()
-
-
-def decode_path(encoded: str) -> str:
-    return base64.urlsafe_b64decode(encoded.encode()).decode()
+# token -> filepath map (keeps callback_data tiny)
+file_token_map: dict[str, str] = {}
 
 
-# ----------- extract subtitle callback ----------- #
+def make_token() -> str:
+    # short unique token (8 hex chars)
+    return uuid.uuid4().hex[:8]
+
+
+# ---------- STEP 1: extract subtitle streams ----------
 @Bot.on_callback_query(filters.regex("^extract_sub$") & filters.user(OWNER_ID))
 async def extract_subtitle_using_ffmpeg(client: Client, query: CallbackQuery):
     await query.answer()
-    user_id = query.from_user.id
-    log.info(f"[START] Subtitle extraction triggered by user {user_id}")
+    uid = query.from_user.id
+    log.info(f"[START] Subtitle extraction requested by {uid}")
 
-    if user_id not in media_obj_store:
-        log.warning(f"No media found in memory for user {user_id}")
+    if uid not in media_obj_store:
+        log.warning(f"No media in memory for {uid}")
         return await query.message.edit_text("! ɴᴏ ᴍᴇᴅɪᴀ ғᴏᴜɴᴅ ᴏɴ ᴍᴇᴍᴏʀʏ.")
 
-    video_message = media_obj_store[user_id]
-    start_time = time.time()
+    msg = media_obj_store[uid]
+    start = time.time()
 
     try:
-        if not hasattr(video_message, "downloaded_file"):
-            log.info(f"Downloading media for user {user_id}...")
-            video_message.downloaded_file = await video_message.download(
+        # download once
+        if not hasattr(msg, "downloaded_file"):
+            log.info(f"Downloading media for user {uid}...")
+            msg.downloaded_file = await msg.download(
                 progress=progress_bar,
-                progress_args=(start_time, query.message, "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴍᴇᴅɪᴀ...")
+                progress_args=(start, query.message, "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ...")
             )
-            log.info(f"Download complete: {video_message.downloaded_file}")
+            log.info(f"Downloaded: {msg.downloaded_file}")
 
-        file_path = video_message.downloaded_file
+        file_path = msg.downloaded_file
         streams = await get_subtitle_streams(file_path)
-        log.info(f"Subtitle streams found: {streams}")
+        log.info(f"Streams found: {streams}")
 
         if not streams:
-            return await query.message.edit_text("⚠️ ɴᴏ sᴜʙᴛɪᴛʟᴇ ғᴏᴜɴᴅ.")
+            log.warning(f"No subtitle streams found in {file_path}")
+            return await query.message.edit_text("⚠️ Nᴏ sᴜʙᴛɪᴛʟᴇ ғᴏᴜɴᴅ.")
 
+        # create token and store mapping
+        token = make_token()
+        file_token_map[token] = file_path
+        log.info(f"Token {token} → {file_path}")
+
+        # build tiny callback data: subsel|<token>|<index>
         buttons = [
             [
                 InlineKeyboardButton(
                     f"{s['title']} ({s['lang']})",
-                    callback_data=f"subsel|{encode_path(file_path)}|{s['index']}"
+                    callback_data=f"subsel|{token}|{s['index']}"
                 )
             ] for s in streams
         ]
-        await query.message.edit_text("🎞 sᴇʟᴇᴄᴛ sᴜʙᴛɪᴛʟᴇ:", reply_markup=InlineKeyboardMarkup(buttons))
-        log.info("Subtitle selection buttons sent to user")
+
+        await query.message.edit_text(
+            "🎞 Sᴇʟᴇᴄᴛ sᴜʙᴛɪᴛʟᴇ:",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+        log.info("Buttons sent")
 
     except Exception as e:
-        log.exception(f"Error during subtitle extraction: {e}")
+        log.exception("Error during subtitle extraction")
         await query.message.edit_text(f"❌ ᴇʀʀᴏʀ: {e}")
 
 
-# ----------- choose format ----------- #
+# ---------- STEP 2: choose format ----------
 @Bot.on_callback_query(filters.regex("^subsel\\|") & filters.user(OWNER_ID))
 async def choose_format(client: Client, query: CallbackQuery):
     await query.answer()
     try:
-        _, encoded_file_path, stream_index = query.data.split("|")
-        file_path = decode_path(encoded_file_path)
-    except Exception:
+        _, token, stream_index = query.data.split("|")
+    except ValueError:
         return await query.message.edit_text("⚠️ Invalid callback data!")
 
-    log.info(f"User {query.from_user.id} selected stream {stream_index} for file {file_path}")
+    file_path = file_token_map.get(token)
+    if not file_path or not os.path.exists(file_path):
+        log.warning(f"Missing file for token {token}")
+        # cleanup possible stale token
+        file_token_map.pop(token, None)
+        return await query.message.edit_text("⚠️ Fɪʟᴇ ɴᴏᴛ ᴏɴ sᴇʀᴠᴇʀ ᴀɴʏᴍᴏʀᴇ.")
+
+    log.info(f"User {query.from_user.id} selected stream {stream_index} for {file_path}")
 
     markup = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("• ᴀss •", callback_data=f"ffmpeg_export|{encode_path(file_path)}|{stream_index}|ass"),
-            InlineKeyboardButton("• sʀᴛ •", callback_data=f"ffmpeg_export|{encode_path(file_path)}|{stream_index}|srt")
+            InlineKeyboardButton("• ASS •", callback_data=f"ffmpeg_export|{token}|{stream_index}|ass"),
+            InlineKeyboardButton("• SRT •", callback_data=f"ffmpeg_export|{token}|{stream_index}|srt")
         ]
     ])
-    await query.message.edit_text("🧩 sᴇʟᴇᴄᴛ ᴇxᴘᴏʀᴛ ғᴏʀᴍᴀᴛ:", reply_markup=markup)
+
+    await query.message.edit_text("🧩 Sᴇʟᴇᴄᴛ ғᴏʀᴍᴀᴛ:", reply_markup=markup)
 
 
-# ----------- export subtitle ----------- #
+# ---------- STEP 3: export subtitle ----------
 @Bot.on_callback_query(filters.regex("^ffmpeg_export\\|") & filters.user(OWNER_ID))
 async def export_subtitle(client: Client, query: CallbackQuery):
     await query.answer()
     try:
-        _, encoded_file_path, stream_index, fmt = query.data.split("|")
-        file_path = decode_path(encoded_file_path)
-    except Exception:
-        log.error("Invalid callback data format")
-        return await query.message.edit_text("⚠️ ɪɴᴠᴀʟɪᴅ ᴅᴀᴛᴀ ғᴏʀᴍᴀᴛ!")
+        _, token, stream_index, fmt = query.data.split("|")
+    except ValueError:
+        log.error("Invalid export callback format")
+        return await query.message.edit_text("⚠️ Invalid callback data!")
+
+    file_path = file_token_map.get(token)
+    if not file_path or not os.path.exists(file_path):
+        log.warning(f"Token missing or file gone: {token}")
+        file_token_map.pop(token, None)
+        return await query.message.edit_text("⚠️ Fɪʟᴇ ɴᴏᴛ ᴏɴ sᴇʀᴠᴇʀ ᴀɴʏᴍᴏʀᴇ.")
 
     output_path = file_path.rsplit(".", 1)[0] + f".{fmt}"
-    log.info(f"Exporting subtitle: file={file_path}, stream={stream_index}, format={fmt}, output={output_path}")
+    log.info(f"Exporting subtitle: file={file_path}, stream={stream_index}, fmt={fmt}, out={output_path}")
 
-    status_msg = await query.message.edit_text(f"⚙️ ᴇxᴛʀᴀᴄᴛɪɴɢ {fmt.upper()}...", parse_mode=ParseMode.HTML)
+    status = await query.message.edit_text(f"⚙️ Exᴛʀᴀᴄᴛɪɴɢ {fmt.upper()}...")
+
     cmd = ["ffmpeg", "-y", "-i", file_path, "-map", f"0:s:{stream_index}", output_path]
     rc, out, err = await run_cmd(cmd)
-    log.info(f"FFmpeg returned code {rc}")
+    log.info(f"ffmpeg rc={rc}")
 
     if rc != 0 or not os.path.exists(output_path):
-        log.error(f"FFmpeg failed: {err}")
-        await status_msg.edit_text(f"❌ ғᴀɪʟᴇᴅ!\n<code>{err[:800]}</code>", parse_mode=ParseMode.HTML)
-        await cleanup_system(client, query.from_user.id, [output_path, file_path])
+        log.error(f"ffmpeg failed: {err}")
+        await status.edit_text(f"❌ Fᴀɪʟᴇᴅ!\n<code>{err[:800]}</code>")
+        # cleanup and remove token
+        await cleanup_system(client, query.from_user.id, [output_path])
+        file_token_map.pop(token, None)
         return
 
     try:
         await client.send_document(
             query.from_user.id,
             output_path,
-            thumb=getattr(client, "thumb", None),
             caption=f"Sᴜʙᴛɪᴛʟᴇ Exᴘᴏʀᴛᴇᴅ ({fmt.upper()})",
             progress=progress_bar,
-            progress_args=(time.time(), query.message, "ᴜᴘʟᴏᴀᴅɪɴɢ ғɪʟᴇ...")
+            progress_args=(time.time(), query.message, "ᴜᴘʟᴏᴀᴅɪɴɢ...")
         )
-        await status_msg.edit_text(f"✅ ᴇxᴛʀᴀᴄᴛɪᴏɴ sᴜᴄᴄᴇssғᴜʟʟ!")
+        await status.edit_text("✅ Dᴏɴᴇ!")
 
     except Exception as e:
-        log.exception(f"Failed to send subtitle file: {e}")
-        await status_msg.edit_text(f"❌ ғᴀɪʟᴇᴅ ᴛᴏ sᴇɴᴅ ғɪʟᴇ: {e}")
+        log.exception("Failed to send subtitle")
+        await status.edit_text(f"❌ Sᴇɴᴅ ғᴀɪʟᴇᴅ: {e}")
 
     finally:
-        log.info(f"Cleaning up temporary files: {[output_path, file_path]}")
-        await cleanup_system(client, query.from_user.id, [output_path, file_path])
-        log.info("[END] Subtitle extraction flow complete")
+        # remove output file and token; keep original file removal optional
+        await cleanup_system(client, query.from_user.id, [output_path])
+        file_token_map.pop(token, None)
+        log.info(f"Cleaned up token {token} and output {output_path}")
