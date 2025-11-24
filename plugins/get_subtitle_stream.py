@@ -3,6 +3,8 @@ from plugins.ffmpeg import run_cmd
 from config import LOGGER
 import time
 
+log = LOGGER("get_subtitle_stream.py")
+
 async def get_subtitle_streams(video_path):
     log.info(f"[GET_SUBS] Checking: {video_path}")
 
