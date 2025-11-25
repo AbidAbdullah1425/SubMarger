@@ -23,7 +23,7 @@ async def run_cmd(cmd: list):
             log.debug(f"stderr: {err.decode()}")
 
         success = rc == 0
-        return success, out.decode(), err.decode()
+        return rc, out.decode(), err.decode()
 
     except Exception as e:
         elapsed = time.time() - start_time
