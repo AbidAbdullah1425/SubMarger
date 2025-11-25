@@ -17,7 +17,7 @@ async def get_subtitle_streams(video_path):
     ]
     log.info(f"[FFPROBE CMD] {' '.join(cmd)}")
 
-    ok, out, err = await run_cmd(cmd)
+    ok, rc, out, err = await run_cmd(cmd)
 
     if not ok:
         log.error(f"[FFPROBE ERROR] {err}")
