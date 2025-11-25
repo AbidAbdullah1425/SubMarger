@@ -69,9 +69,9 @@ async def remove_sub_common(client, query, file_path, index=None, remove_all=Fal
         cmd += ["-map", f"-0:s:{index}"]  # remove one
 
     cmd += ["-c", "copy", output_path]
-    rc, out, err = await run_cmd(cmd)
+    success, rc, out, err = await run_cmd(cmd)
 
-    if rc != 0 or not os.path.exists(output_path):
+    if not success or not os.path.exists(output_path):
         await query.message.edit_text(f"❌ ғᴀɪʟᴇᴅ!\n<code>{err[:800]}</code>", parse_mode=ParseMode.HTML)
         return cleanup_system([output_path, file_path])
 
