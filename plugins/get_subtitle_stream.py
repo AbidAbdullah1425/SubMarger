@@ -40,7 +40,7 @@ async def get_subtitle_streams(video_path):
         log.info(f"[STREAM META] {s}")  # full metadata for debugging
 
         subs.append({
-            "index": str(s.get("index")),
+            "index": str(len(subs)),
             "codec": s.get("codec_name", "unknown"),
             "lang": s.get("tags", {}).get("language", "und"),
             "title": s.get("tags", {}).get("title", "unknown")
