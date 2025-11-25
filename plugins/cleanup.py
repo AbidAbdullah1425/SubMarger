@@ -7,7 +7,7 @@ from config import LOGGER
 
 log = LOGGER("Cleanup")
 
-def cleanup_system(paths=None, remove_dirs=True):
+def cleanup_system(client=None, uid=None, paths=None, remove_dirs=True):
     """Clean files, kill stray ffmpeg, free RAM."""
     paths = paths or []
     log.info(f"Starting cleanup. Remove dirs: {remove_dirs}, paths: {paths}")
