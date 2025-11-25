@@ -132,10 +132,10 @@ async def export_subtitle(client: Client, query: CallbackQuery):
     status = await query.message.edit_text(f"⚙️ Exᴛʀᴀᴄᴛɪɴɢ {fmt.upper()}...")
 
     cmd = ["ffmpeg", "-y", "-i", file_path, "-map", f"0:s:{stream_index}", output_path]
-    rc, out, err = await run_cmd(cmd)
+    success, rc, out, err = await run_cmd(cmd)
     log.info(f"ffmpeg rc={rc}")
 
-    if rc != 0 or not os.path.exists(output_path):
+    if not success or not os.path.exists(output_path):
         log.error(f"ffmpeg failed: {err}")
         await status.edit_text(f"❌ Fᴀɪʟᴇᴅ!\n<code>{err[:800]}</code>")
         # cleanup and remove token
