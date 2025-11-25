@@ -147,7 +147,7 @@ async def export_subtitle(client: Client, query: CallbackQuery):
         await client.send_document(
             query.from_user.id,
             output_path,
-            caption=f"Sᴜʙᴛɪᴛʟᴇ Exᴘᴏʀᴛᴇᴅ ({fmt.upper()})",
+            thumb=client.thumb,
             progress=progress_bar,
             progress_args=(time.time(), query.message, "ᴜᴘʟᴏᴀᴅɪɴɢ...")
         )
