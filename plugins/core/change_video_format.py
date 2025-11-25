@@ -2,11 +2,14 @@ import os, time, asyncio
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from bot import Bot
-from config import OWNER_ID
+from config import OWNER_ID, LOGGER
 from plugins.start import media_obj_store  # correct relative import
 from plugins.progressbar import progress_bar
 from plugins.cleanup import cleanup_system
 from plugins.ffmpeg import run_cmd  # assuming your ffmpeg wrapper is here
+
+log = LOGGER("convert_video_format.py")
+
 
 # ----------- change video format callback ----------- #
 @Bot.on_callback_query(filters.regex("^change_video_format$") & filters.user(OWNER_ID))
@@ -73,7 +76,7 @@ async def convert_video_format(client: Client, query: CallbackQuery):
     await cleanup_system(client, user_id)
 
     # build new filename
-    new_filename = f"{client.filename}.{target_ext}".format(episode = client.episode)
+    new_filename = f"{client.filename}.{target_ext}".replace("{episode}", str(client.episode))
     output_path = os.path.join(os.path.dirname(input_path), new_filename)
 
     # notify user
@@ -89,5 +92,23 @@ async def convert_video_format(client: Client, query: CallbackQuery):
         return
 
     # final output
+    try:
+        await client.send_document(
+            user_id,
+            output_path,
+            thumb=client.thumb,
+            caption=None,
+            progress=progress_bar,
+            progress_args=(time.time(), query.message, "ᴜᴘʟᴏᴀᴅɪɴɢ...")
+        )
+        await status_msg.edit_text(f"✅ ᴠɪᴅᴇᴏ ᴄᴏɴᴠᴇʀᴛᴇᴅ!")
 
-    await status_msg.edit_text(f"✅ ᴠɪᴅᴇᴏ ᴄᴏɴᴠᴇʀᴛᴇᴅ!")
+    except Exception as e:
+        log.exception("Failed to send formatted video")
+        await status_msg.edit_text(f"❌ Sᴇɴᴅ ғᴀɪʟᴇᴅ: {e}")
+
+    finally:
+        # remove output file and token; keep original file removal optional
+        await cleanup_system(client, query.from_user.id, [output_path])
+        
+    
