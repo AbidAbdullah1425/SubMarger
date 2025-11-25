@@ -80,7 +80,7 @@ async def convert_video_format(client: Client, query: CallbackQuery):
     status_msg = await query.message.edit_text(f"🔄 ᴄᴏɴᴠᴇʀᴛɪɴɢ ᴠɪᴅᴇᴏ ᴛᴏ {target_ext.upper()}...")
 
     # run ffmpeg
-    success, out, err = await run_cmd([
+    success, rc, out, err = await run_cmd([
         "ffmpeg", "-i", input_path, "-c", "copy", output_path
     ])
 
