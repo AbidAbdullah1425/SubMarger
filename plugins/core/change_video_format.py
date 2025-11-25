@@ -73,7 +73,7 @@ async def convert_video_format(client: Client, query: CallbackQuery):
     await cleanup_system(client, user_id)
 
     # build new filename
-    new_filename = f"{client.filename}.{target_ext}"
+    new_filename = f"{client.filename}.{target_ext}".format(episode = client.episode)
     output_path = os.path.join(os.path.dirname(input_path), new_filename)
 
     # notify user
@@ -89,4 +89,5 @@ async def convert_video_format(client: Client, query: CallbackQuery):
         return
 
     # final output
-    await status_msg.edit_text(f"✅ ᴠɪᴅᴇᴏ ᴄᴏɴᴠᴇʀᴛᴇᴅ!\n\n📁 {new_filename}")
+
+    await status_msg.edit_text(f"✅ ᴠɪᴅᴇᴏ ᴄᴏɴᴠᴇʀᴛᴇᴅ!")
