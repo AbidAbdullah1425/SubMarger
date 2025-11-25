@@ -8,6 +8,30 @@ from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, 
 # tmp vars 
 media_obj_store = {}
 
+def main_media_keyboard():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("• ᴇxᴘᴏʀᴛ sᴜʙ •", callback_data="extract_sub"),
+            InlineKeyboardButton("• ɪᴍᴘᴏʀᴛ sᴜʙ •", callback_data="add_sub")
+        ],
+        [
+            InlineKeyboardButton("• ʀᴇᴍᴏᴠᴇ sᴜʙ •", callback_data="remove_sub"),
+            InlineKeyboardButton("• ᴛʜᴜᴍʙ •", callback_data="set_thumb")
+        ],
+        [
+            InlineKeyboardButton("• ғɪʟᴇɴᴀᴍᴇ •", callback_data="set_filename"),
+            InlineKeyboardButton("• ᴀᴜᴛᴏ ᴘʀᴏᴄᴇss •", callback_data="dummy")
+        ],
+        [
+            InlineKeyboardButton("• ᴄʜᴀɴɢᴇ ᴠɪᴅ ғᴏʀᴍᴀᴛ •", callback_data="change_video_format")
+        ],
+        [
+            InlineKeyboardButton(f"➕", callback_data="ep_add"),
+            InlineKeyboardButton(f"➖", callback_data="ep_sub"),
+            InlineKeyboardButton(f"📟", callback_data="ep_set")
+        ]
+    ])
+
 @Bot.on_message(filters.command("start") & filters.user(OWNER_ID) & filters.private) 
 async def start_message(client: Client, message: Message):
     user_id = message.from_user.id 
@@ -48,28 +72,7 @@ async def media_receiver(client: Client, message: Message):
         chat_id=message.chat.id,
         caption=f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}",
         photo=START_PHOTO,
-        reply_markup = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("• ᴇxᴘᴏʀᴛ sᴜʙ •", callback_data="extract_sub"),
-                InlineKeyboardButton("• ɪᴍᴘᴏʀᴛ sᴜʙ •", callback_data="add_sub")
-            ],
-            [
-                InlineKeyboardButton("• ʀᴇᴍᴏᴠᴇ sᴜʙ •", callback_data="remove_sub"),
-                InlineKeyboardButton("• ᴛʜᴜᴍʙ •", callback_data="set_thumb")
-            ],
-            [
-                InlineKeyboardButton("• ғɪʟᴇɴᴀᴍᴇ •", callback_data="set_filename"),
-                InlineKeyboardButton("• ᴀᴜᴛᴏ ᴘʀᴏᴄᴇss •", callback_data="dummy")
-            ],
-            [
-                InlineKeyboardButton("• ᴄʜᴀɴɢᴇ ᴠɪᴅ ғᴏʀᴍᴀᴛ •", callback_data="change_video_format")
-            ],
-            [
-                InlineKeyboardButton(f"➕", callback_data="ep_add"),
-                InlineKeyboardButton(f"➖", callback_data="ep_sub"),
-                InlineKeyboardButton(f"📟", callback_data="ep_set")
-            ]
-        ]),
+        reply_markup = main_media_keyboard(),
         parse_mode=ParseMode.HTML
     )
 
@@ -98,7 +101,8 @@ async def episode_control(client: Bot, query):
 
     # Update caption after add/sub/cancel
     await query.message.edit_caption(
-        f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}"
+        f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}",
+        reply_markup = main_media_keyboard()
     )
 
 # ForceReply handler
@@ -113,8 +117,10 @@ async def force_reply_episode(client: Bot, message: Message):
         await client.update_setting("episode", client.episode)
         del client.pending_episode_msg
         await reply_msg.edit_caption(
-            f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}"
+            f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}",
+            reply_markup = main_media_keyboard()
         )
+        
         await message.reply(f"ᴜᴘᴅᴀᴛᴇᴅ ᴛᴏ {client.episode}")
     except ValueError:
         await message.reply("ᴠᴀʟᴜᴇ ᴇʀʀᴏʀ")
