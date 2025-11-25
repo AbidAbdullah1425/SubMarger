@@ -24,9 +24,6 @@ async def change_video_format_using_ffmpeg(client: Client, query: CallbackQuery)
     video_message = media_obj_store[user_id]
     start_time = time.time()
 
-    # cleanup old messages before starting
-    await cleanup_system(client, user_id)
-
     # download media if not already downloaded
     if not hasattr(video_message, "downloaded_file"):
         video_message.downloaded_file = await video_message.download(
