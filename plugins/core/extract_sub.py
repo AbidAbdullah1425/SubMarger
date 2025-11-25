@@ -102,8 +102,8 @@ async def choose_format(client: Client, query: CallbackQuery):
 
     markup = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("• ASS •", callback_data=f"ffmpeg_export|{token}|{stream_index}|ass"),
-            InlineKeyboardButton("• SRT •", callback_data=f"ffmpeg_export|{token}|{stream_index}|srt")
+            InlineKeyboardButton("• ᴀss •", callback_data=f"ffmpeg_export|{token}|{stream_index}|ass"),
+            InlineKeyboardButton("• sʀᴛ •", callback_data=f"ffmpeg_export|{token}|{stream_index}|srt")
         ]
     ])
 
