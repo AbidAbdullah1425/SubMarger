@@ -19,18 +19,12 @@ async def change_sub_format(input_path: str, target_format: str, output_dir: str
     base_name, _ = os.path.splitext(filename)
     output_path = os.path.join(output_dir, f"{base_name}.{target_format}")
 
-    # Use ffmpeg for conversion
-    cmd = [
-        "ffmpeg", "-y", "-i", input_path, output_path
-    ]
-    process = await subprocess.create_subprocess_exec(
-        *cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-    stdout, stderr = await process.communicate()
-    if process.returncode != 0:
-        raise Exception(stderr.decode())
+    # Use run_cmd
+    cmd = ["ffmpeg", "-y", "-i", input_path, output_path]
+    success, rc, out, err = await run_cmd(cmd)
+    if not success or not os.path.exists(output_path):
+        raise Exception(err or "ffmpeg failed without error message")
+
     return output_path
 
 
