@@ -20,7 +20,7 @@ async def set_thumbnail(client: Client, event):
             await old_message.edit_text(
                 "⊡ sᴇɴᴅ ᴏʀ ᴜᴘʟᴏᴀᴅ ᴛʜᴇ ᴛʜᴜᴍʙɴᴀɪʟ...",
                 parse_mode=ParseMode.HTML,
-reply_markup=ForceReply(selective=True)
+                reply_markup=ForceReply(selective=True)
         )
         else:
             msg = await event.message.reply_text(
