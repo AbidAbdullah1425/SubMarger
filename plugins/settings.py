@@ -20,7 +20,7 @@ async def set_thumbnail(client: Client, event):
             await old_message.edit_text(
                 "⊡ sᴇɴᴅ ᴏʀ ᴜᴘʟᴏᴀᴅ ᴛʜᴇ ᴛʜᴜᴍʙɴᴀɪʟ...",
                 parse_mode=ParseMode.HTML,
-                reply_markup=ForceReply(selective=True)
+reply_markup=ForceReply(selective=True)
         )
         else:
             msg = await event.message.reply_text(
@@ -87,17 +87,17 @@ async def set_filename(client: Client, event):
         )
 
     try:
-        reply = await client.listen(
+        # Wait for reply message using ForceReply style
+        reply_message = await client.listen(
             chat_id,
-            filters=filters.text & filters.user(user_id),
+            filters=filters.reply & filters.user(user_id),
             timeout=300
         )
 
-        fmt = reply.text.strip()
-        await client.update_setting("filename", fmt)
-
+        new_name = reply_message.text.strip()
+        await reply_message.delete()
         await ask_msg.edit_text(
-            f"⊡ ғɪʟᴇɴᴀᴍᴇ ᴜᴘᴅᴀᴛᴇᴅ\n<code>{fmt}</code>",
+            f"⊡ ғɪʟᴇɴᴀᴍᴇ ᴜᴘᴅᴀᴛᴇᴅ\n<code>{new_name}</code>",
             parse_mode=ParseMode.HTML
         )
 
