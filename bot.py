@@ -1,6 +1,6 @@
 from aiohttp import web
 from plugins import web_server
-from pyrogram import Client
+from pyromod.listen import Client
 from pyrogram.enums import ParseMode
 from datetime import datetime
 import pyrogram.utils
