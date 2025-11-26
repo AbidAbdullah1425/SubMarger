@@ -1,5 +1,6 @@
 import os, time
-from pyrogram import Client, filters
+from pyromod.listen import Client
+from pyrogram import filters
 from pyrogram.types import CallbackQuery, ForceReply
 from bot import Bot
 from config import OWNER_ID, FONT, DOWNLOAD_DIR
