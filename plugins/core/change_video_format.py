@@ -1,5 +1,6 @@
 import os, time, asyncio
-from pyrogram import Client, filters
+from pyromod.listen import Client
+from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from bot import Bot
 from config import OWNER_ID, LOGGER
