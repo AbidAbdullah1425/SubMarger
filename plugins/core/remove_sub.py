@@ -1,5 +1,6 @@
 import os, time, asyncio
-from pyrogram import Client, filters
+from pyromod.listen import Client
+from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.enums import ParseMode
 from bot import Bot
