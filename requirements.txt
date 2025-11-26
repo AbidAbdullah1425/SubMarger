@@ -5,4 +5,3 @@ ffmpeg-python
 psutil
 pymongo
 motor
-pyromod
