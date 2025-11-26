@@ -29,13 +29,19 @@ async def set_thumbnail(client: Client, event):
                 reply_markup=ForceReply(selective=True)
             )
 
-        reply = await client.listen(
+        # Wait for the user to reply with a photo
+        reply_message = await client.listen(
             chat_id,
-            filters=filters.photo & filters.user(user.id),
+            filters=filters.reply & filters.photo & filters.user(user.id),
             timeout=300
         )
 
-        file_id = reply.photo.file_id
+        file_id = reply_message.photo.file_id
+        await reply_message.delete()
+        await ask_msg.edit_text(
+            "⊡ ᴛʜᴜᴍʙɴᴀɪʟ ᴜᴘᴅᴀᴛᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ"
+        )
+
         await client.update_setting("thumb", file_id)
 
         if is_callback:
