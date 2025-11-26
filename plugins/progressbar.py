@@ -1,5 +1,5 @@
 import time
-from pyromod.listen import Client
+from pyrogram import Client
 
 
 # progress bar function
