@@ -4,7 +4,6 @@ from pyrogram.enums import ParseMode
 import asyncio
 from config import OWNER_ID
 from bot import Bot
-import pyromod.listen
 
 
 
