@@ -32,7 +32,7 @@ async def set_thumbnail(client: Client, event):
         # Wait for the user to reply with a photo
         reply_message = await client.listen(
             chat_id,
-            filter=filters.reply & filters.photo & filters.user(user.id),
+            filters.reply & filters.photo & filters.user(user.id),
             timeout=300
         )
 
@@ -96,7 +96,7 @@ async def set_filename(client: Client, event):
         # Wait for reply message using ForceReply style
         reply_message = await client.listen(
             chat_id,
-            filter=filters.reply & filters.user(user_id),
+            filters.reply & filters.user(user_id),
             timeout=300
         )
 
