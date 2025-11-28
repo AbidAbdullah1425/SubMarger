@@ -100,6 +100,7 @@ async def handle_add_sub_reply(client: Client, message):
             OWNER_ID,
             output_path,
             caption=None,
+            thumb=cluent.thumb,
             progress=progress_bar,
             progress_args=(time.time(), message, "ᴜᴘʟᴏᴀᴅɪɴɢ ғɪʟᴇ...")
         )
