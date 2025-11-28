@@ -78,7 +78,7 @@ class Bot(Client):
 
     async def load_settings(self):
         """Load thumb and filename from MongoDB; fallback handled in start()"""
-        data = await self.mongodb.get_settings()
+        data = await self.mongodb.get_db()
         self.thumb = data.get("thumb", self.thumb)
         self.filename = data.get("filename", self.filename)
         self.episode = data.get("episode", self.episode)
@@ -86,7 +86,7 @@ class Bot(Client):
     async def update_setting(self, key, value):
         """Update MongoDB and in-memory attribute"""
         try:
-            await self.mongodb.update_setting(key, value)
+            await self.mongodb.update_db(key, value)
             setattr(self, key, value)
             self.LOGGER(__name__).info(f"Updated setting {key} = {value}")
         except Exception as e:
