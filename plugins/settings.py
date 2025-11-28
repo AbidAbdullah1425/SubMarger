@@ -10,8 +10,7 @@ from pyrogram.types import (
 from pyrogram.enums import ParseMode
 import asyncio
 from config import OWNER_ID
-from database.database import update_settings # Assuming this is your actual DB function
-
+from database.database import MongoDB
 # --- Helper to get context for messages/callbacks ---
 async def get_settings_context(event):
     """Determines chat_id, the message object (to reply/edit), and user_id."""
