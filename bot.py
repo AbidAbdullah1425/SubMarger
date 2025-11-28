@@ -83,7 +83,7 @@ class Bot(Client):
         self.filename = data.get("filename", self.filename)
         self.episode = data.get("episode", self.episode)
 
-    async def update_setting(self, key, value):
+    async def update_settings(self, key, value):
         """Update MongoDB and in-memory attribute"""
         try:
             await self.mongodb.update_db(key, value)
