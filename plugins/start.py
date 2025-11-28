@@ -84,10 +84,10 @@ async def episode_control(client: Bot, query):
 
     if action == "ep_add":
         client.episode += 1
-        await client.update_setting("episode", client.episode)
+        await client.update_settings("episode", client.episode)
     elif action == "ep_sub":
         client.episode = max(client.episode - 1, 0)
-        await client.update_setting("episode", client.episode)
+        await client.update_settings("episode", client.episode)
     elif action == "ep_set":
         client.pending_episode_msg = query.message.message_id
         await query.message.edit_caption(
@@ -114,7 +114,7 @@ async def force_reply_episode(client: Bot, message: Message):
 
     try:
         client.episode = int(message.text)
-        await client.update_setting("episode", client.episode)
+        await client.update_settings("episode", client.episode)
         del client.pending_episode_msg
         await reply_msg.edit_caption(
             f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}",
