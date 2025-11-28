@@ -1,105 +1,85 @@
 from pyrogram import Client, filters
-from bot import Bot 
 from pyrogram.types import (
     CallbackQuery, 
-    InlineKeyboardMarkup, 
-    InlineKeyboardButton, 
-    ForceReply, # ❗ FIXED: Imported ForceReply
+    ForceReply,
     Message
 )
 from pyrogram.enums import ParseMode
-import asyncio
+from bot import Bot 
 from config import OWNER_ID
-from database.database import MongoDB
-# --- Helper to get context for messages/callbacks ---
+# Assuming you have update_settings function available
+from database.database import update_settings 
+
+# --- STATE MANAGEMENT DICTIONARY ---
+# {chat_id: prompt_message_id}
+WAITING_FOR_INPUT = {}
+
+# --- Helper to get context ---
 async def get_settings_context(event):
-    """Determines chat_id, the message object (to reply/edit), and user_id."""
+    """Determines chat_id, the message object, and user_id."""
     if isinstance(event, CallbackQuery):
-        # Callback Queries are attached to event.message
         return event.message.chat.id, event.message, event.from_user.id
-    # Messages (commands) are the event itself
     return event.chat.id, event, event.from_user.id
 
 # ------------------------------------------------------------------
-#                       SET THUMBNAIL (/set_thumb)
+# 1. INPUT HANDLER (Listener for ALL Replies - Core Logic)
 # ------------------------------------------------------------------
-@Bot.on_message(filters.command("set_thumb") & filters.user(OWNER_ID))
-@Bot.on_callback_query(filters.regex("^set_thumb$") & filters.user(OWNER_ID))
-async def set_thumbnail(client: Client, event):
-    chat_id, original_msg, user_id = await get_settings_context(event)
-
-    prompt_text = (
-        "<b>🖼 sᴇɴᴅ ᴏʀ ᴜᴘʟᴏᴀᴅ ᴛʜᴇ ᴛʜᴜᴍʙɴᴀɪʟ ᴅɪʀᴇᴄᴛʟʏ ʜᴇʀᴇ!</b>\n"
-        "<code>ᴛɪᴍᴇᴏᴜᴛ: 5 ᴍɪɴs | ᴛʏᴘᴇ /cancel ᴛᴏ sᴛᴏᴘ</code>"
-    )
+@Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID) & ~filters.edited, group=1)
+async def process_user_input_force_reply(client: Client, message: Message):
+    chat_id = message.chat.id
     
-    # Send the prompt with ForceReply UI
-    if isinstance(event, CallbackQuery):
-        await original_msg.delete() # Clean up old menu
-        ask_msg = await client.send_message(chat_id, prompt_text, reply_markup=ForceReply(True), parse_mode=ParseMode.HTML)
-    else:
-        ask_msg = await original_msg.reply_text(prompt_text, reply_markup=ForceReply(True), parse_mode=ParseMode.HTML)
+    # 1. Check if the user is currently expected to provide input
+    if chat_id in WAITING_FOR_INPUT:
+        prompt_id = WAITING_FOR_INPUT.pop(chat_id) # Remove from wait list
+        
+        try:
+            # 2. Crucial Check: Ensure the message is a reply to the specific prompt
+            if message.reply_to_message and message.reply_to_message.id == prompt_id:
+                
+                prompt_msg = await client.get_messages(chat_id, prompt_id)
+                
+                # --- FILENAME PROCESSING ---
+                if "ғɪʟᴇɴᴀᴍᴇ" in prompt_msg.text: 
+                    fmt = message.text.strip()
+                    await update_settings(chat_id, "filename", fmt) 
+                    
+                    # --- CLEAN VISUAL FLOW ---
+                    await prompt_msg.delete() 
+                    await message.delete()   
+                    
+                    await client.send_message(
+                        chat_id,
+                        f"<b>✅ ғɪʟᴇɴᴀᴍᴇ ғᴏʀᴍᴀᴛ ᴜᴘᴅᴀᴛᴇᴅ</b>\n<code>{fmt}</code>",
+                        parse_mode=ParseMode.HTML
+                    )
+                
+                # If it's a thumbnail prompt but they sent text (ignored)
+                elif "ᴛʜᴜᴍʙɴᴀɪʟ" in prompt_msg.text:
+                    # Optional: Notify user they need to send a photo
+                    await client.send_message(
+                        chat_id, 
+                        "<b>⚠️ Pʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ **ᴘʜᴏᴛᴏ** ᴀs ᴀ ʀᴇᴘʟʏ ᴛᴏ sᴇᴛ ᴛʜᴜᴍʙɴᴀɪʟ.</b>",
+                        parse_mode=ParseMode.HTML
+                    )
+                
+            else:
+                # The message wasn't a reply to the prompt, so put the ID back
+                WAITING_FOR_INPUT[chat_id] = prompt_id
+                
+        except Exception as e:
+            print(f"Error processing user input: {e}")
+            await client.send_message(chat_id, f"<b>⚠️ Iɴᴛᴇʀɴᴀʟ ᴇʀʀᴏʀ:</b> {e}", parse_mode=ParseMode.HTML)
 
-    try:
-        # Wait for the user's response
-        reply = await client.wait_for_message(
-            chat_id=chat_id,
-            filters=(filters.photo | filters.text) & filters.user(user_id),
-            timeout=300
-        )
-
-        # 1. Check for Cancel Command
-        if reply.text and reply.text.lower() == "/cancel":
-            await ask_msg.delete()
-            await reply.delete()
-            await client.send_message(chat_id, "<b>❌ Pʀᴏᴄᴇss Cᴀɴᴄᴇʟʟᴇᴅ.</b>", parse_mode=ParseMode.HTML)
-            return
-
-        # 2. Process Photo (Success Flow)
-        if reply.photo:
-            file_id = reply.photo.file_id
-            
-            # ❗ FIXED: Using the imported DB function
-            await update_settings(chat_id, "thumb", file_id) 
-            
-            # --- CLEAN VISUAL FLOW ---
-            await ask_msg.delete() # Delete the bot's prompt
-            await reply.delete()   # Delete the user's reply (clean up)
-            
-            await client.send_message(
-                chat_id,
-                "<b>✅ ᴛʜᴜᴍʙɴᴀɪʟ ᴜᴘᴅᴀᴛᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ</b>",
-                parse_mode=ParseMode.HTML
-            )
-        else:
-            # Handle invalid input
-            await ask_msg.delete()
-            await reply.delete()
-            await client.send_message(chat_id, "<b>❌ Iɴᴠᴀʟɪᴅ. Pʟᴇᴀsᴇ sᴇɴᴅ ᴀ ᴘʜᴏᴛᴏ.</b>", parse_mode=ParseMode.HTML)
-
-    except asyncio.TimeoutError:
-        # 3. Timeout Handler
-        markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton("• ᴛʀʏ ᴀɢᴀɪɴ •", callback_data="set_thumb")]
-        ])
-        await ask_msg.edit_text(
-            "<b>⊡ ʀᴇǫᴜᴇsᴛ ᴛɪᴍᴇᴏᴜᴛ! ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.</b>",
-            reply_markup=markup,
-            parse_mode=ParseMode.HTML
-        )
 
 # ------------------------------------------------------------------
-#                       SET FILENAME (/set_filename)
+# 2. SET FILENAME COMMAND (Trigger)
 # ------------------------------------------------------------------
 @Bot.on_message(filters.command("set_filename") & filters.user(OWNER_ID))
 @Bot.on_callback_query(filters.regex("^set_filename$") & filters.user(OWNER_ID))
-async def set_filename(client: Client, event):
+async def set_filename_force_reply(client: Client, event):
     chat_id, original_msg, user_id = await get_settings_context(event)
 
-    prompt_text = (
-        "<b>📝 sᴇɴᴅ ᴛʜᴇ ɴᴇᴡ ғɪʟᴇɴᴀᴍᴇ ғᴏʀᴍᴀᴛ ʜᴇʀᴇ!</b>\n"
-        "<code>ᴛɪᴍᴇᴏᴜᴛ: 5 ᴍɪɴs | ᴛʏᴘᴇ /cancel ᴛᴏ sᴛᴏᴘ</code>"
-    )
+    prompt_text = "<b>📝 sᴇɴᴅ ᴛʜᴇ ɴᴇᴡ ғɪʟᴇɴᴀᴍᴇ ғᴏʀᴍᴀᴛ ʜᴇʀᴇ!</b>"
 
     # Send the prompt with ForceReply UI
     if isinstance(event, CallbackQuery):
@@ -108,43 +88,61 @@ async def set_filename(client: Client, event):
     else:
         ask_msg = await original_msg.reply_text(prompt_text, reply_markup=ForceReply(True), parse_mode=ParseMode.HTML)
 
-    try:
-        reply = await client.wait_for_message(
-            chat_id=chat_id,
-            filters=filters.text & filters.user(user_id),
-            timeout=300
-        )
+    # ❗ Store the message ID for the input handler to check
+    WAITING_FOR_INPUT[chat_id] = ask_msg.id
+    # No more asyncio.sleep(300) is needed here. The function exits immediately.
 
-        # 1. Check for Cancel Command
-        if reply.text.lower() == "/cancel":
-            await ask_msg.delete()
-            await reply.delete()
-            await client.send_message(chat_id, "<b>❌ Pʀᴏᴄᴇss Cᴀɴᴄᴇʟʟᴇᴅ.</b>", parse_mode=ParseMode.HTML)
-            return
 
-        # 2. Process Filename (Success Flow)
-        fmt = reply.text.strip()
+# ------------------------------------------------------------------
+# 3. DEDICATED THUMBNAIL PHOTO HANDLER
+# ------------------------------------------------------------------
+@Bot.on_message(filters.photo & filters.private & filters.user(OWNER_ID), group=2)
+async def process_thumbnail_photo_input(client: Client, message: Message):
+    chat_id = message.chat.id
+    
+    if chat_id in WAITING_FOR_INPUT:
+        prompt_id = WAITING_FOR_INPUT.pop(chat_id)
         
-        # ❗ FIXED: Using the imported DB function
-        await update_settings(chat_id, "filename", fmt)
+        try:
+            # Check if this photo is a reply to the thumbnail prompt
+            if message.reply_to_message and message.reply_to_message.id == prompt_id:
+                
+                prompt_msg = await client.get_messages(chat_id, prompt_id)
+                
+                # Check if the prompt text contains "THUMBNAIL"
+                if "ᴛʜᴜᴍʙɴᴀɪʟ" in prompt_msg.text: 
+                    file_id = message.photo.file_id
+                    
+                    await update_settings(chat_id, "thumb", file_id) 
+                    
+                    # --- CLEAN VISUAL FLOW ---
+                    await prompt_msg.delete() 
+                    await message.delete()
+                    
+                    await client.send_message(
+                        chat_id,
+                        "<b>✅ ᴛʜᴜᴍʙɴᴀɪʟ ᴜᴘᴅᴀᴛᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ</b>",
+                        parse_mode=ParseMode.HTML
+                    )
+        except Exception as e:
+            print(f"Error processing photo input: {e}")
+            await client.send_message(chat_id, f"<b>⚠️ Iɴᴛᴇʀɴᴀʟ ᴇʀʀᴏʀ ᴅᴜʀɪɴɢ ᴘʀᴏᴄᴇssɪɴɢ:</b> {e}", parse_mode=ParseMode.HTML)
 
-        # --- CLEAN VISUAL FLOW ---
-        await ask_msg.delete() # Delete the bot's prompt
-        await reply.delete()   # Delete the user's reply (clean up)
-        
-        await client.send_message(
-            chat_id,
-            f"<b>✅ ғɪʟᴇɴᴀᴍᴇ ғᴏʀᴍᴀᴛ ᴜᴘᴅᴀᴛᴇᴅ</b>\n<code>{fmt}</code>",
-            parse_mode=ParseMode.HTML
-        )
+# ------------------------------------------------------------------
+# 4. SET THUMBNAIL COMMAND (Trigger)
+# ------------------------------------------------------------------
+@Bot.on_message(filters.command("set_thumb") & filters.user(OWNER_ID))
+@Bot.on_callback_query(filters.regex("^set_thumb$") & filters.user(OWNER_ID))
+async def set_thumbnail_trigger(client: Client, event):
+    chat_id, original_msg, user_id = await get_settings_context(event)
 
-    except asyncio.TimeoutError:
-        # 3. Timeout Handler
-        markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton("• ᴛʀʏ ᴀɢᴀɪɴ •", callback_data="set_filename")]
-        ])
-        await ask_msg.edit_text(
-            "<b>⊡ ʀᴇǫᴜᴇsᴛ ᴛɪᴍᴇᴏᴜᴛ! ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.</b>",
-            reply_markup=markup,
-            parse_mode=ParseMode.HTML
-        )
+    prompt_text = "<b>🖼 sᴇɴᴅ ᴏʀ ᴜᴘʟᴏᴀᴅ ᴛʜᴇ ᴛʜᴜᴍʙɴᴀɪʟ ᴅɪʀᴇᴄᴛʟʏ ʜᴇʀᴇ!</b>"
+
+    if isinstance(event, CallbackQuery):
+        await original_msg.delete() 
+        ask_msg = await client.send_message(chat_id, prompt_text, reply_markup=ForceReply(True), parse_mode=ParseMode.HTML)
+    else:
+        ask_msg = await original_msg.reply_text(prompt_text, reply_markup=ForceReply(True), parse_mode=ParseMode.HTML)
+
+    # ❗ Store the message ID for the input handler to check
+    WAITING_FOR_INPUT[chat_id] = ask_msg.id
