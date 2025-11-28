@@ -42,7 +42,7 @@ async def process_user_input_force_reply(client: Client, message: Message):
                     fmt = message.text.strip()
 
                     # ❗ FINAL FIX: Use client.update_setting (Bot class method)
-                    await client.update_setting("filename", fmt)
+                    await client.update_settings("filename", fmt)
 
                     # --- CLEAN VISUAL FLOW ---
                     await prompt_msg.delete() 
@@ -112,7 +112,7 @@ async def process_thumbnail_photo_input(client: Client, message: Message):
                     file_id = message.photo.file_id
 
                     # ❗ FINAL FIX: Use client.update_setting (Bot class method)
-                    await client.update_setting("thumb", file_id)
+                    await client.update_settings("thumb", file_id)
 
                     # Clean up prompt and user reply
                     await prompt_msg.delete() 
