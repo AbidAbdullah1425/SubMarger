@@ -9,11 +9,14 @@ class MongoDB:
 
   async def init_collection(self):
     """Ensure the settings doc exists (safe upsert)."""
-    await self.collection.update_one(
-      {"_id": "bot_settings"},
-      {"$setOnInsert": {"_id": "bot_settings"}},
-      upsert=True
+    result = await self.collection.update_one(
+        {"_id": "bot_settings"},
+        {"$setOnInsert": {"_id": "bot_settings"}},
+        upsert=True
     )
+    if result.upserted_id:
+        return False  # newly created
+    return True  # already existed
 
   async def get_db(self):
     data = await self.collection.find_one({"_id": "bot_settings"})
