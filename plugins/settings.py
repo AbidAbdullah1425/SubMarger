@@ -8,7 +8,7 @@ from pyrogram.enums import ParseMode
 from bot import Bot 
 from config import OWNER_ID
 # Assuming you have update_settings function available
-from database.database import update_settings 
+from database.database import MongoDB 
 
 # --- STATE MANAGEMENT DICTIONARY ---
 # {chat_id: prompt_message_id}
