@@ -44,8 +44,7 @@ async def set_thumbnail(client: Client, event):
         # Wait for the user's response
         reply = await client.wait_for_message(
             chat_id=chat_id,
-            from_user=user_id,
-            filters=(filters.photo | filters.text),
+            filters=(filters.photo | filters.text) & filters.user(user_id),
             timeout=300
         )
 
@@ -112,8 +111,7 @@ async def set_filename(client: Client, event):
     try:
         reply = await client.wait_for_message(
             chat_id=chat_id,
-            from_user=user_id,
-            filters=filters.text,
+            filters=filters.text & filters.user(user_id),
             timeout=300
         )
 
