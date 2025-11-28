@@ -15,12 +15,12 @@ class MongoDB:
       upsert=True
     )
 
-  async def get_settings(self):
+  async def get_db(self):
     data = await self.collection.find_one({"_id": "bot_settings"})
     return data or {}
 
   # <-- RENAMED: singular to match Bot.update_setting calls
-  async def update_setting(self, key, value):
+  async def update_db(self, key, value):
     await self.collection.update_one(
       {"_id": "bot_settings"},
       {"$set": {key: value}},
