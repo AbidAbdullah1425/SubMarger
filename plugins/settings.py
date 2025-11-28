@@ -6,8 +6,9 @@ from pyrogram.types import (
 )
 from pyrogram.enums import ParseMode
 from bot import Bot 
-from config import OWNER_ID
-from database.database import MongoDB
+from config import OWNER_ID, LOGGER 
+
+log = LOGGER("settings.py")
 
 # --- STATE MANAGEMENT ---
 WAITING_FOR_INPUT = {}
@@ -41,7 +42,7 @@ async def process_user_input_force_reply(client: Client, message: Message):
                 if "ғɪʟᴇɴᴀᴍᴇ" in prompt_msg.text: 
                     fmt = message.text.strip()
 
-                    # ❗ FINAL FIX: Use client.update_setting (Bot class method)
+                    # ❗ FINAL FIX: Use client.update_settings (Bot class method)
                     await client.update_settings("filename", fmt)
 
                     # --- CLEAN VISUAL FLOW ---
@@ -66,7 +67,7 @@ async def process_user_input_force_reply(client: Client, message: Message):
                 WAITING_FOR_INPUT[chat_id] = prompt_id
 
         except Exception as e:
-            print(f"Error processing user input: {e}")
+            log.error(f"Error processing user input: {e}")
             await client.send_message(chat_id, f"<b>⚠️ Iɴᴛᴇʀɴᴀʟ ᴇʀʀᴏʀ:</b> {e}", parse_mode=ParseMode.HTML)
 
 
@@ -111,7 +112,7 @@ async def process_thumbnail_photo_input(client: Client, message: Message):
                 if "ᴛʜᴜᴍʙ" in prompt_msg.text: 
                     file_id = message.photo.file_id
 
-                    # ❗ FINAL FIX: Use client.update_setting (Bot class method)
+                    # ❗ FINAL FIX: Use client.update_settings (Bot class method)
                     await client.update_settings("thumb", file_id)
 
                     # Clean up prompt and user reply
@@ -124,7 +125,7 @@ async def process_thumbnail_photo_input(client: Client, message: Message):
                         parse_mode=ParseMode.HTML
                     )
         except Exception as e:
-            print(f"Error processing photo input: {e}")
+            log.error(f"Error processing photo input: {e}")
             await client.send_message(chat_id, f"<b>⚠️ Iɴᴛᴇʀɴᴀʟ ᴇʀʀᴏʀ ᴅᴜʀɪɴɢ ᴘʀᴏᴄᴇSSɪɴɢ:</b> {e}", parse_mode=ParseMode.HTML)
 
 
