@@ -5,7 +5,6 @@ from pyrogram.enums import ParseMode
 from datetime import datetime
 import pyrogram.utils
 from database.database import MongoDB
-import sys
 from config import (
     API_HASH, API_ID, LOGGER, TELEGRAM_TOKEN, TG_BOT_WORKERS,
     PORT, FILENAME as DEFAULT_FILENAME, THUMB as DEFAULT_THUMB,
@@ -25,11 +24,13 @@ class Bot(Client):
             workers=TG_BOT_WORKERS,
             bot_token=TELEGRAM_TOKEN
         )
+
         self.LOGGER = LOGGER
         self.mongodb = MongoDB(DB_URL, DB_NAME)
-        # default values first
+
+        # Default values
         self.thumb = DEFAULT_THUMB
-        self.filename = DEFAULT_FILENAME 
+        self.filename = DEFAULT_FILENAME
         self.episode = 174
         self.username = None
         self.uptime = None
@@ -38,18 +39,30 @@ class Bot(Client):
         await super().start()
         self.uptime = datetime.now()
 
-        # Load settings from MongoDB safely
+        # 🔥 INIT MONGODB COLLECTION
         try:
-            await self.load_settings()
-            self.LOGGER(__name__).info("✅ Settings loaded from MongoDB.")
+            existed = await self.mongodb.init_collection()
+            if existed:
+                self.LOGGER(__name__).info("🟢 MongoDB collection exists.")
+            else:
+                self.LOGGER(__name__).info("🟡 MongoDB collection created (empty).")
         except Exception as e:
-            self.LOGGER(__name__).warning(
-                f"⚠️ Failed to load settings from MongoDB. Using default config values. Error: {e}"
-            )
-            self.thumb = DEFAULT_THUMB
-            self.filename = DEFAULT_FILENAME
+            self.LOGGER(__name__).error(f"🔴 MongoDB INIT failed: {e}")
 
-        # Get bot info
+        # 🔥 LOAD SETTINGS
+        try:
+            data = await self.mongodb.get_db()
+            if not data or len(data.keys()) <= 1:  # only _id exists
+                self.LOGGER(__name__).warning("⚠️ Settings empty in MongoDB. Using defaults.")
+            else:
+                await self.load_settings()
+                self.LOGGER(__name__).info(
+                    f"🟢 Settings loaded: thumb={self.thumb}, filename={self.filename}, episode={self.episode}"
+                )
+        except Exception as e:
+            self.LOGGER(__name__).error(f"🔴 Failed loading settings: {e}")
+
+        # BOT INFO
         try:
             me = await self.get_me()
             self.username = me.username
@@ -58,8 +71,6 @@ class Bot(Client):
             self.LOGGER(__name__).error(f"Failed to get bot info: {e}")
 
         self.set_parse_mode(ParseMode.HTML)
-
-        # Log bot banner
         self.LOGGER(__name__).info("ONLYNOCO")
 
         # Start web server
@@ -76,18 +87,21 @@ class Bot(Client):
         await super().stop()
         self.LOGGER(__name__).info("Bot stopped.")
 
+    # -------------------------------------------------------------
+    # SETTINGS HANDLING
+    # -------------------------------------------------------------
     async def load_settings(self):
-        """Load thumb and filename from MongoDB; fallback handled in start()"""
+        """Load thumb, filename, episode from MongoDB."""
         data = await self.mongodb.get_db()
         self.thumb = data.get("thumb", self.thumb)
         self.filename = data.get("filename", self.filename)
         self.episode = data.get("episode", self.episode)
 
     async def update_settings(self, key, value):
-        """Update MongoDB and in-memory attribute"""
+        """Update MongoDB and in-memory attribute."""
         try:
             await self.mongodb.update_db(key, value)
             setattr(self, key, value)
-            self.LOGGER(__name__).info(f"Updated setting {key} = {value}")
+            self.LOGGER(__name__).info(f"🟢 Setting updated: {key} = {value}")
         except Exception as e:
-            self.LOGGER(__name__).warning(f"Failed to update setting {key}: {e}")
+            self.LOGGER(__name__).warning(f"🔴 Failed to update setting {key}: {e}")
