@@ -64,6 +64,7 @@ async def convert_sub_callback(client: Client, query: CallbackQuery):
             OWNER_ID,  
             output_path,  
             caption=None,  
+            thumb=client.thumb,
             progress=progress_bar,  
             progress_args=(time.time(), query.message, "ᴜᴘʟᴏᴀᴅɪɴɢ ғɪʟᴇ...")  
         )  
