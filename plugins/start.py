@@ -44,7 +44,7 @@ async def start_message(client: Client, message: Message):
     storage = used / total * 100
 
     # sys info 
-    sys_info = f"sʏsᴛᴇᴍ ɪɴғᴏ\nᴄᴘᴜ - {cpu}%\nʀᴀᴍ - {ram}%\nsᴛᴏʀᴀɢᴇ- {storage:.1f}%"
+    sys_info = f"<blockquote>sʏsᴛᴇᴍ ɪɴғᴏ\nᴄᴘᴜ - {cpu}%\nʀᴀᴍ - {ram}%\nsᴛᴏʀᴀɢᴇ- {storage:.1f}%</blockquote>"
 
     await client.send_photo(
         chat_id=user_id,
@@ -58,7 +58,8 @@ async def start_message(client: Client, message: Message):
                 InlineKeyboardButton("• ᴏᴡɴᴇʀ •", url="https://t.me/OnlyNoco"),
                 InlineKeyboardButton ("• ᴡᴇʙsɪᴛᴇ •", url="https://onlynoco.vercel.app")
             ]
-        ])
+        ]),
+        parse_mode=ParseMode.HTML
     )
 
 @Bot.on_message(
@@ -70,7 +71,7 @@ async def media_receiver(client: Client, message: Message):
 
     await client.send_photo(
         chat_id=message.chat.id,
-        caption=f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}",
+        caption=f"<blockquote>sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!</blockquote>\n\n<blockquote>~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}</blockquote>",
         photo=START_PHOTO,
         reply_markup = main_media_keyboard(),
         parse_mode=ParseMode.HTML
@@ -101,7 +102,7 @@ async def episode_control(client: Bot, query):
 
     # Update caption after add/sub/cancel
     await query.message.edit_caption(
-        f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}",
+        f"<blockquote>sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!</blockquote>\n\n<blockquote>~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}</blockquote>",
         reply_markup = main_media_keyboard()
     )
 
@@ -117,7 +118,7 @@ async def force_reply_episode(client: Bot, message: Message):
         await client.update_settings("episode", client.episode)
         del client.pending_episode_msg
         await reply_msg.edit_caption(
-            f"sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!\n\n~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}",
+            f"<blockquote>sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴡɪᴛʜ ᴛʜɪs ᴍᴇᴅɪᴀ ғɪʟᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴀᴛ ʙᴀsᴇᴅ ᴏɴ ʏᴏᴜʀ ᴅᴇsɪʀᴇ!</blockquote>\n\n<blockquote>~ ᴛʜᴜᴍʙ - {client.thumb}\n~ ғɪʟᴇɴᴀᴍᴇ - {client.filename}\n~ ᴇᴘɪsᴏᴅᴇ - {client.episode}</blockquote>",
             reply_markup = main_media_keyboard()
         )
         
