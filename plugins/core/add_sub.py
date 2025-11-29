@@ -47,8 +47,10 @@ async def add_subtitle_request(client: Client, query: CallbackQuery):
 async def handle_add_sub_reply(client: Client, message):
     user_id = message.from_user.id
     reply_msg = message.reply_to_message
+    if not reply_msg:
+        return
 
-    if user_id not in pending_sub_reply or reply_msg.message_id != pending_sub_reply[user_id]:
+    if user_id not in pending_sub_reply or reply_msg.id != pending_sub_reply[user_id]:
         return
 
     video_path = video_paths.get(user_id)
@@ -100,7 +102,7 @@ async def handle_add_sub_reply(client: Client, message):
             OWNER_ID,
             output_path,
             caption=None,
-            thumb=cluent.thumb,
+            thumb=client.thumb,
             progress=progress_bar,
             progress_args=(time.time(), message, "ᴜᴘʟᴏᴀᴅɪɴɢ ғɪʟᴇ...")
         )
