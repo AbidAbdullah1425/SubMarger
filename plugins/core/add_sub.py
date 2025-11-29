@@ -34,7 +34,7 @@ async def add_subtitle_request(client: Client, query: CallbackQuery):
         )
         video_paths[user_id] = video_path
 
-    pending_sub_reply[user_id] = query.message_id
+    pending_sub_reply[user_id] = query.message.id
 
     await query.message.edit_text(
         "📩 ʀᴇᴘʟʏ ᴡɪᴛʜ ʏᴏᴜʀ sᴜʙᴛɪᴛʟᴇ ғɪʟᴇ (srt or ass).",
