@@ -90,7 +90,7 @@ async def episode_control(client: Bot, query):
         client.episode = max(client.episode - 1, 0)
         await client.update_settings("episode", client.episode)
     elif action == "ep_set":
-        client.pending_episode_msg = query.message_id
+        client.pending_episode_msg = query.message.id
         await query.message.edit_caption(
             f"sᴇᴛ ᴀ ɴᴇᴡ ᴠᴀʟᴜᴇ ғᴏʀ ᴛʜᴇ ᴇᴘɪsᴏᴅᴇ\nᴄᴜʀʀᴇɴᴛ: {client.episode}",
             reply_markup=ForceReply(True)
