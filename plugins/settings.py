@@ -6,7 +6,7 @@ from pyrogram.types import (
 )
 from pyrogram.enums import ParseMode
 from bot import Bot 
-from config import OWNER_ID, LOGGER 
+from config import OWNER_ID, LOGGER, DB_CHANNEL
 
 log = LOGGER("settings.py")
 
@@ -110,10 +110,14 @@ async def process_thumbnail_photo_input(client: Client, message: Message):
 
                 # Check if the prompt text contains "THUMBNAIL"
                 if "ᴛʜᴜᴍʙ" in prompt_msg.text: 
-                    file_id = message.photo.file_id
-
-                    # ❗ FINAL FIX: Use client.update_settings (Bot class method)
-                    await client.update_settings("thumb", file_id)
+                    db_msg = await client.send_photo(
+                        chat_id=DB_CHANNEL,
+                        photo=message.photo.file_id
+                    )
+                    
+                    if db_msg:
+                        file_id = db_msg.photo.file_id
+                        await client.update_settings("thumb", file_id)
 
                     # Clean up prompt and user reply
                     await prompt_msg.delete() 
