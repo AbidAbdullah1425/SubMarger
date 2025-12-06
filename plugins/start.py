@@ -4,6 +4,7 @@ from bot import Bot
 from config import OWNER_ID, START_MSG, START_PHOTO
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, ForceReply
+from plugins.auto_process import WAITING_SUB, MEDIA_STORE
 
 # tmp vars 
 media_obj_store = {}
@@ -132,6 +133,22 @@ async def force_reply_episode(client: Bot, message: Message):
     (filters.document & filters.create(lambda _, __, m: m.document and (m.document.file_name.endswith((".srt", ".ass")))))
 )
 async def subtitle_receiver(client: Client, message: Message):
+    
+    uid = message.from_user.id
+
+    # === Auto Process Mode ===
+    if WAITING_SUB.get(uid):
+        WAITING_SUB[uid] = False
+
+        sub_path = await message.download()
+        MEDIA_STORE.setdefault(uid, {})["sub_path"] = sub_path
+
+        await message.reply(f"Subtitle saved: {message.document.file_name}")
+        return    # <<< IMPORTANT: skip normal menu
+
+
+
+
     media_obj_store[message.from_user.id] = message  # save file data
 
     await client.send_photo(
