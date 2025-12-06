@@ -144,10 +144,13 @@ async def export_subtitle(client: Client, query: CallbackQuery):
         return
 
     try:
+
+        thumb_path = await client.download_media(client.thumb)
+
         await client.send_document(
             query.from_user.id,
             output_path,
-            thumb=client.thumb,
+            thumb=thumb_path,
             progress=progress_bar,
             progress_args=(time.time(), query.message, "ᴜᴘʟᴏᴀᴅɪɴɢ...")
         )
