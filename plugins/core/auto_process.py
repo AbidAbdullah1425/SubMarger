@@ -92,7 +92,8 @@ async def give_file_prompt(client: Client, q: CallbackQuery):
     filters.user(OWNER_ID) &
     filters.document &
     filters.create(lambda _, __, m: 
-        WAITING_SUB.get(m.from_user.id) is True and
+        WAITING_SUB.get(m.from_user.id) and
+        m.document and
         m.document.file_name.lower().endswith((".srt", ".ass"))
     )
 )
