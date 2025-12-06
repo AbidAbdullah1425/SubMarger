@@ -125,59 +125,25 @@ async def force_reply_episode(client: Bot, message: Message):
     except ValueError:
         await message.reply("ᴠᴀʟᴜᴇ ᴇʀʀᴏʀ")
 
-# subtitle receiver
-# Subtitle Receiver
-@Bot.on_message(filters.user(OWNER_ID) & filters.document)
-async def subtitle_receiver(client: Client, m: Message):
-    uid = m.from_user.id
+# Subtitle receiver
+@Bot.on_message(
+    filters.user(OWNER_ID) &
+    (filters.document & filters.create(lambda _, __, m: m.document and (m.document.file_name.endswith((".srt", ".ass")))))
+)
+async def subtitle_receiver(client: Client, message: Message):
+    media_obj_store[message.from_user.id] = message  # save file data
 
-    # Must have pressed "GIVE SUB" first
-    if not WAITING_SUB.get(uid):
-        return
-
-    # Validate file extension
-    fname = m.document.file_name.lower()
-    if not fname.endswith((".srt", ".ass")):
-        return await m.reply("⚠️ Only .srt or .ass allowed.")
-
-    # Stop waiting
-    WAITING_SUB[uid] = False
-
-    # Download subtitle to local storage (auto_process may use later)
-    sub_path = await m.download()
-    MEDIA_STORE.setdefault(uid, {})["sub_path"] = sub_path
-    MEDIA_STORE[uid]["sub_doc_file_id"] = m.document.file_id
-
-    # Delete the waiting message if exists
-    wait_msg_id = MEDIA_STORE[uid].get("waiting_msg_id")
-    if wait_msg_id:
-        try:
-            await client.delete_messages(chat_id=uid, message_ids=wait_msg_id)
-        except:
-            pass
-
-    # Log subtitle in DB channel
-    try:
-        await client.send_document(
-            chat_id=DB_CHANNEL,
-            document=m.document.file_id,
-            caption=f"Subtitle received from {uid}"
-        )
-    except:
-        pass
-
-    # Confirmation to user
-    await m.reply(f"✅ Subtitle saved: {m.document.file_name}")
-
-    # Ask user for conversion type
-    await m.reply(
-        "Select subtitle format:",
+    await client.send_photo(
+        chat_id=message.chat.id,
+        photo=START_PHOTO,
+        caption="sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴛʜɪs sᴜʙᴛɪᴛʟᴇ",
         reply_markup=InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("• sʀᴛ •", callback_data="convert_sub_srt"),
                 InlineKeyboardButton("• ᴀss •", callback_data="convert_sub_ass")
             ]
-        ])
+        ]),
+        parse_mode=ParseMode.HTML
     )
 
 @Bot.on_callback_query(filters.regex("^dummy$"))
