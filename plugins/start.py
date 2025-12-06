@@ -127,24 +127,44 @@ async def force_reply_episode(client: Bot, message: Message):
     except ValueError:
         await message.reply("ᴠᴀʟᴜᴇ ᴇʀʀᴏʀ")
 
-# Subtitle receiver
-@Bot.on_message(
-    filters.user(OWNER_ID) &
-    (filters.document & filters.create(lambda _, __, m: m.document and (m.document.file_name.endswith((".srt", ".ass")))))
-)
-async def subtitle_receiver(client: Client, message: Message):
-    
-    uid = message.from_user.id
+@Bot.on_message(filters.user(OWNER_ID) & filters.document)
+async def subtitle_receiver(client: Client, m: Message):
 
-    # === Auto Process Mode ===
-    if WAITING_SUB.get(uid):
-        WAITING_SUB[uid] = False
+    uid = m.from_user.id
 
-        sub_path = await message.download()
-        MEDIA_STORE.setdefault(uid, {})["sub_path"] = sub_path
+    # not waiting → normal operations
+    if not WAITING_SUB.get(uid):
+        return
 
-        await message.reply(f"Subtitle saved: {message.document.file_name}")
-        return    # <<< IMPORTANT: skip normal menu
+    # waiting → ensure it's srt/ass
+    fname = m.document.file_name.lower()
+    if not fname.endswith((".srt", ".ass")):
+        return await m.reply("⚠️ Only .srt or .ass allowed.")
+
+    # disable waiting mode
+    WAITING_SUB[uid] = False
+
+    # download subtitle
+    sub_path = await m.download()
+    MEDIA_STORE.setdefault(uid, {})["sub_path"] = sub_path
+
+    # delete waiting status message
+    wait_msg_id = MEDIA_STORE[uid].get("waiting_msg_id")
+    if wait_msg_id:
+        try:
+            await client.delete_messages(uid, wait_msg_id)
+        except:
+            pass
+
+    # upload original subtitle to log channel
+    await client.send_document(
+        DB_CHANNEL,
+        m.document.file_id,
+        caption=f"Subtitle received from {uid}"
+    )
+
+    # confirm
+    await m.reply(f"✅ Subtitle saved: {m.document.file_name}")
 
 
 
