@@ -192,7 +192,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
 
     except Exception as e:
         log.exception("ᴀᴜᴛᴏ ᴘʀᴏᴄᴇss ғᴀɪʟᴇᴅ")
-        await q.message.edit_text(f"ᴇʀʀᴏʀ: {e}")
+        await q.message.edit_text(f"ᴇʀʀᴏʀ: {str(e)[:1024]}")
 
     finally:
         # cleanup temp files (keep output)
