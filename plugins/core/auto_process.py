@@ -2,12 +2,11 @@ import os, time
 from bot import Bot
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from plugins.start import media_obj_store
 from plugins.ffmpeg import run_cmd
 from plugins.core.change_sub_format import change_sub_format
 from plugins.progressbar import progress_bar
 from plugins.cleanup import cleanup_system
-from config import OWNER_ID, DOWNLOAD_DIR, FONT, LOGGER
+from config import OWNER_ID, DOWNLOAD_DIR, FONT, LOGGER, media_obj_store
 
 log = LOGGER("auto_process.py")
 
