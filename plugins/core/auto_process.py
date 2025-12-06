@@ -80,7 +80,7 @@ async def give_file_prompt(client: Client, q: CallbackQuery):
     )
 
     # store this status msg id so we can delete it later
-    MEDIA_STORE.setdefault(uid, {})["waiting_msg_id"] = status.message_id
+    MEDIA_STORE.setdefault(uid, {})["waiting_msg_id"] = status.id
 
     await q.answer("Send subtitle now.")
     
