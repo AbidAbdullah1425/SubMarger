@@ -128,7 +128,13 @@ async def force_reply_episode(client: Bot, message: Message):
 # Subtitle receiver
 @Bot.on_message(
     filters.user(OWNER_ID) &
-    (filters.document & filters.create(lambda _, __, m: m.document and (m.document.file_name.endswith((".srt", ".ass")))) & WAITING_SUB.get(m.from_user.id) == False)
+    filters.create(
+        lambda _, __, m: (
+            m.document and
+            m.document.file_name.lower().endswith((".srt", ".ass")) and
+            WAITING_SUB.get(m.from_user.id) == False
+        )
+    )
 )
 async def subtitle_receiver(client: Client, message: Message):
     media_obj_store[message.from_user.id] = message  # save file data
