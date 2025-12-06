@@ -1,13 +1,11 @@
 from pyrogram import filters, Client
 import psutil, shutil
 from bot import Bot
-from config import OWNER_ID, START_MSG, START_PHOTO, DB_CHANNEL
+from config import OWNER_ID, START_MSG, START_PHOTO, DB_CHANNEL, media_obj_store
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, ForceReply
 from plugins.core.auto_process import WAITING_SUB, MEDIA_STORE
 
-# tmp vars 
-media_obj_store = {}
 
 def main_media_keyboard():
     return InlineKeyboardMarkup([
