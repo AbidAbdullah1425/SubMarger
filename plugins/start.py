@@ -126,7 +126,7 @@ async def force_reply_episode(client: Bot, message: Message):
         await message.reply("ᴠᴀʟᴜᴇ ᴇʀʀᴏʀ")
 
 # Subtitle receiver
-@Bot.on_message(
+'''@Bot.on_message(
     filters.user(OWNER_ID) &
     filters.create(
         lambda _, __, m: (
@@ -135,7 +135,7 @@ async def force_reply_episode(client: Bot, message: Message):
             WAITING_SUB.get(m.from_user.id) == False
         )
     )
-)
+)'''
 async def subtitle_receiver(client: Client, message: Message):
     media_obj_store[message.from_user.id] = message  # save file data
 
