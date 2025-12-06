@@ -127,6 +127,7 @@ async def force_reply_episode(client: Bot, message: Message):
     except ValueError:
         await message.reply("ᴠᴀʟᴜᴇ ᴇʀʀᴏʀ")
 
+# subtitle receiver
 @Bot.on_message(filters.user(OWNER_ID) & filters.document)
 async def subtitle_receiver(client: Client, m: Message):
 
