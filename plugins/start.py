@@ -133,56 +133,48 @@ async def subtitle_receiver(client: Client, m: Message):
 
     uid = m.from_user.id
 
-    # not waiting → normal operations
+    # not in waiting mode → ignore
     if not WAITING_SUB.get(uid):
         return
 
-    # waiting → ensure it's srt/ass
     fname = m.document.file_name.lower()
     if not fname.endswith((".srt", ".ass")):
         return await m.reply("⚠️ Only .srt or .ass allowed.")
 
-    # disable waiting mode
+    # disable waiting
     WAITING_SUB[uid] = False
 
     # download subtitle
     sub_path = await m.download()
     MEDIA_STORE.setdefault(uid, {})["sub_path"] = sub_path
 
-    # delete waiting status message
+    # delete the waiting message if exists
     wait_msg_id = MEDIA_STORE[uid].get("waiting_msg_id")
     if wait_msg_id:
         try:
-            await client.delete_messages(uid, wait_msg_id)
+            await client.delete_messages(chat_id=uid, message_ids=wait_msg_id)
         except:
             pass
 
-    # upload original subtitle to log channel
+    # log original subtitle
     await client.send_document(
-        DB_CHANNEL,
-        m.document.file_id,
+        chat_id=DB_CHANNEL,
+        document=m.document.file_id,
         caption=f"Subtitle received from {uid}"
     )
 
-    # confirm
+    # confirmation to user
     await m.reply(f"✅ Subtitle saved: {m.document.file_name}")
 
-
-
-
-    media_obj_store[message.from_user.id] = message  # save file data
-
-    await client.send_photo(
-        chat_id=message.chat.id,
-        photo=START_PHOTO,
-        caption="sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴛʜɪs sᴜʙᴛɪᴛʟᴇ",
+    # ask for conversion type
+    await m.reply(
+        "Select subtitle format:",
         reply_markup=InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("• sʀᴛ •", callback_data="convert_sub_srt"),
                 InlineKeyboardButton("• ᴀss •", callback_data="convert_sub_ass")
             ]
-        ]),
-        parse_mode=ParseMode.HTML
+        ])
     )
 
 @Bot.on_callback_query(filters.regex("^dummy$"))
