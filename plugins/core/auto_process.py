@@ -90,12 +90,10 @@ async def give_file_prompt(client: Client, q: CallbackQuery):
 # --- handle incoming subtitle ---
 @Bot.on_message(
     filters.user(OWNER_ID) &
-    filters.create(
-        lambda _, __, m: (
-            m.document and
-            m.document.file_name.lower().endswith((".srt", ".ass")) and
-            WAITING_SUB.get(m.from_user.id) == True
-        )
+    filters.document &
+    filters.create(lambda _, __, m: 
+        WAITING_SUB.get(m.from_user.id) is True and
+        m.document.file_name.lower().endswith((".srt", ".ass"))
     )
 )
 async def receive_sub(client: Client, msg):
