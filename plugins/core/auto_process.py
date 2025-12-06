@@ -12,8 +12,14 @@ log = LOGGER("auto_process.py")
 
 # UI options (index cycles)
 CHANGE_VIDEO_FORMAT_OPT = ["🚫", "ᴍᴋᴠ", "ᴍᴘ4"]
-CHANGE_SUB_FORMAT_OPT   = ["🚫", "ᴀss", "sʀᴛ"]
-POST_OPT                = ["🚫", "❇️"]
+CHANGE_SUB_FORMAT_OPT = ["🚫", "ᴀss", "sʀᴛ"]
+POST_OPT = ["🚫", "❇️"]
+
+# Mapping to real extensions
+VIDEO_EXT_MAP = {
+    "ᴍᴋᴠ": "mkv",
+    "ᴍᴘ4": "mp4",
+}
 
 # State & storage
 AUTO_PS_STATE = {}   # {user_id: {"video":0,"sub":0,"post":0}}
@@ -147,6 +153,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
         # --- change video format ---
         target_video = CHANGE_VIDEO_FORMAT_OPT[state["video"]]
         if target_video != "🚫":
+            target_video = VIDEO_EXT_MAP[target_video_ui]  # "mkv" or "mp4"
             out_video = os.path.splitext(video_path)[0] + f".{target_video}"
             await q.message.edit_text(f"ᴄᴏɴᴠᴇʀᴛɪɴɢ ᴠɪᴅᴇᴏ ᴛᴏ {target_video} ...")
             success, rc, out, err = await run_cmd(["ffmpeg", "-i", video_path, "-c", "copy", out_video])
@@ -195,7 +202,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
 
     except Exception as e:
         log.exception("ᴀᴜᴛᴏ ᴘʀᴏᴄᴇss ғᴀɪʟᴇᴅ")
-        await q.message.edit_text(f"ᴇʀʀᴏʀ: {str(e)[:1024]}")
+        await q.message.edit_text(f"ᴇʀʀᴏʀ: {str(e)[:100]}")
 
     finally:
         # cleanup
