@@ -128,27 +128,29 @@ async def force_reply_episode(client: Bot, message: Message):
         await message.reply("ᴠᴀʟᴜᴇ ᴇʀʀᴏʀ")
 
 # subtitle receiver
+# Subtitle Receiver
 @Bot.on_message(filters.user(OWNER_ID) & filters.document)
 async def subtitle_receiver(client: Client, m: Message):
-
     uid = m.from_user.id
 
-    # not in waiting mode → ignore
+    # Must have pressed "GIVE SUB" first
     if not WAITING_SUB.get(uid):
         return
 
+    # Validate file extension
     fname = m.document.file_name.lower()
     if not fname.endswith((".srt", ".ass")):
         return await m.reply("⚠️ Only .srt or .ass allowed.")
 
-    # disable waiting
+    # Stop waiting
     WAITING_SUB[uid] = False
 
-    # download subtitle
+    # Download subtitle to local storage (auto_process may use later)
     sub_path = await m.download()
     MEDIA_STORE.setdefault(uid, {})["sub_path"] = sub_path
+    MEDIA_STORE[uid]["sub_doc_file_id"] = m.document.file_id
 
-    # delete the waiting message if exists
+    # Delete the waiting message if exists
     wait_msg_id = MEDIA_STORE[uid].get("waiting_msg_id")
     if wait_msg_id:
         try:
@@ -156,17 +158,20 @@ async def subtitle_receiver(client: Client, m: Message):
         except:
             pass
 
-    # log original subtitle
-    await client.send_document(
-        chat_id=DB_CHANNEL,
-        document=m.document.file_id,
-        caption=f"Subtitle received from {uid}"
-    )
+    # Log subtitle in DB channel
+    try:
+        await client.send_document(
+            chat_id=DB_CHANNEL,
+            document=m.document.file_id,
+            caption=f"Subtitle received from {uid}"
+        )
+    except:
+        pass
 
-    # confirmation to user
+    # Confirmation to user
     await m.reply(f"✅ Subtitle saved: {m.document.file_name}")
 
-    # ask for conversion type
+    # Ask user for conversion type
     await m.reply(
         "Select subtitle format:",
         reply_markup=InlineKeyboardMarkup([
