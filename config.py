@@ -3,6 +3,8 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 
+media_obj_store = {}
+
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "0")
 API_ID = int(os.environ.get("API_ID", "26254064"))
 API_HASH = os.environ.get("API_HASH", "72541d6610ae7730e6135af9423b319c")
