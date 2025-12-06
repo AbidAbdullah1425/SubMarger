@@ -70,11 +70,20 @@ async def toggle_cb(client: Client, q: CallbackQuery):
 @Bot.on_callback_query(filters.regex("^give_file$") & filters.user(OWNER_ID))
 async def give_file_prompt(client: Client, q: CallbackQuery):
     uid = q.from_user.id
+
+    # enable waiting mode
     WAITING_SUB[uid] = True
-    await q.answer("ʀᴇᴘʟʏ ᴡɪᴛʜ .ᴀss ᴏʀ .sʀᴛ ғɪʟᴇ")
-    await client.send_message(uid, "🏢 ʀᴇᴘʟʏ ᴡɪᴛʜ ᴀ .sʀᴛ ᴏʀ .ᴀss ғɪʟᴇ", reply_markup=None)
-    # store waiting message id so the reply handler can verify
-    #MEDIA_STORE.setdefault(uid, {})["waiting_status_msg"] = status.message_id
+
+    # send fresh status message
+    status = await client.send_message(
+        uid,
+        "🏢 Reply with a .srt or .ass subtitle file"
+    )
+
+    # store this status msg id so we can delete it later
+    MEDIA_STORE.setdefault(uid, {})["waiting_msg_id"] = status.message_id
+
+    await q.answer("Send subtitle now.")
     
 
 # handle incoming reply subtitle
