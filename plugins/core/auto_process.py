@@ -1,4 +1,5 @@
 import os, time
+from bot import Bot
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from plugins.start import media_obj_store
