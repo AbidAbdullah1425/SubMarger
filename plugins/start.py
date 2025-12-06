@@ -20,7 +20,7 @@ def main_media_keyboard():
         ],
         [
             InlineKeyboardButton("• ғɪʟᴇɴᴀᴍᴇ •", callback_data="set_filename"),
-            InlineKeyboardButton("• ᴀᴜᴛᴏ ᴘʀᴏᴄᴇss •", callback_data="dummy")
+            InlineKeyboardButton("• ᴀᴜᴛᴏ ᴘʀᴏᴄᴇss •", callback_data="auto_process")
         ],
         [
             InlineKeyboardButton("• ᴄʜᴀɴɢᴇ ᴠɪᴅ ғᴏʀᴍᴀᴛ •", callback_data="change_video_format")
