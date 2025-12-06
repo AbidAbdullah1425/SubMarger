@@ -18,6 +18,7 @@ POST_OPT                = ["🚫", "❇️"]
 
 AUTO_PS_STATE = {}   # {user_id: {"video":0,"sub":0,"post":0}}
 MEDIA_STORE   = {}   # {user_id: {"video_path":..., "sub_doc_file_id":..., "output":...}}
+WAITING_SUB = {}   # {user_id: True/False}
 
 def get_state(uid):
     if uid not in AUTO_PS_STATE:
@@ -69,10 +70,12 @@ async def toggle_cb(client: Client, q: CallbackQuery):
 @Bot.on_callback_query(filters.regex("^give_file$") & filters.user(OWNER_ID))
 async def give_file_prompt(client: Client, q: CallbackQuery):
     uid = q.from_user.id
-    status = await client.send_message(uid, "🏢 ʀᴇᴘʟʏ ᴡɪᴛʜ ᴀ .sʀᴛ ᴏʀ .ᴀss ғɪʟᴇ", reply_markup=None)
-    # store waiting message id so the reply handler can verify
-    MEDIA_STORE.setdefault(uid, {})["waiting_status_msg"] = status.message_id
+    WAITING_SUB[uid] = True
     await q.answer("ʀᴇᴘʟʏ ᴡɪᴛʜ .ᴀss ᴏʀ .sʀᴛ ғɪʟᴇ")
+    await client.send_message(uid, "🏢 ʀᴇᴘʟʏ ᴡɪᴛʜ ᴀ .sʀᴛ ᴏʀ .ᴀss ғɪʟᴇ", reply_markup=None)
+    # store waiting message id so the reply handler can verify
+    #MEDIA_STORE.setdefault(uid, {})["waiting_status_msg"] = status.message_id
+    
 
 # handle incoming reply subtitle
 @Bot.on_message(filters.user(OWNER_ID) & filters.reply)
