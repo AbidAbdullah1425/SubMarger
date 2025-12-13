@@ -125,21 +125,25 @@ async def force_reply_episode(client: Bot, message: Message):
     except ValueError:
         await message.reply("ᴠᴀʟᴜᴇ ᴇʀʀᴏʀ")
 
-# Subtitle receiver
-async def subtitle_receiver(client: Client, message: Message):
-    media_obj_store[message.from_user.id] = message  # save file data
+@Client.on_message(filters.command("convert") & filters.reply & filters.user(OWNER_ID))
+async def convert_cmd(client, message):
+    r = message.reply_to_message
 
-    await client.send_photo(
-        chat_id=message.chat.id,
-        photo=START_PHOTO,
-        caption="sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏ ᴛʜɪs sᴜʙᴛɪᴛʟᴇ",
+    # check subtitle file
+    if not r.document or not r.document.file_name.lower().endswith((".srt", ".ass")):
+        return await message.reply_text("ʀᴇᴘʟʏ ᴡɪᴛʜ ᴀɴ ᴀss ᴏʀ sʀᴛ ғɪʟᴇ")
+
+    media_obj_store[message.from_user.id] = r  # save subtitle message
+
+    await message.reply_photo(
+        START_PHOTO,
+        caption="sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ",
         reply_markup=InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("• sʀᴛ •", callback_data="convert_sub_srt"),
                 InlineKeyboardButton("• ᴀss •", callback_data="convert_sub_ass")
             ]
-        ]),
-        parse_mode=ParseMode.HTML
+        ])
     )
 
 @Bot.on_callback_query(filters.regex("^dummy$"))
