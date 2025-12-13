@@ -40,7 +40,7 @@ def build_kb(uid):
          InlineKeyboardButton(CHANGE_VIDEO_FORMAT_OPT[s["video"]], callback_data="toggle_video")],
         [InlineKeyboardButton("ᴀᴅᴅ sᴜʙ", callback_data="dummy"),
          InlineKeyboardButton(CHANGE_SUB_FORMAT_OPT[s["sub"]], callback_data="toggle_sub"),
-         InlineKeyboardButton("ɢɪᴠᴇ sᴜʙ", callback_data="give_file")],
+         InlineKeyboardButton("ɢɪᴠᴇ sᴜʙ", callback_data="set_waiting_sub")],
         [InlineKeyboardButton("ᴘᴏsᴛ", callback_data="dummy"),
          InlineKeyboardButton(POST_OPT[s["post"]], callback_data="toggle_post")],
         [InlineKeyboardButton("ᴄᴏɴғɪʀᴍ", callback_data="confirm")]
@@ -61,10 +61,11 @@ async def show_auto_process(client: Client, q: CallbackQuery):
 
 
 # --- toggles ---
-@Bot.on_callback_query(filters.regex("^(toggle_video|toggle_sub|toggle_post)$") & filters.user(OWNER_ID))
+@Bot.on_callback_query(filters.regex("^(toggle_video|toggle_sub|toggle_post|set_waiting_sub)$") & filters.user(OWNER_ID))
 async def toggle_cb(client: Client, q: CallbackQuery):
     uid = q.from_user.id
     s = get_state(uid)
+
     if q.data == "toggle_video":
         s["video"] = (s["video"] + 1) % len(CHANGE_VIDEO_FORMAT_OPT)
         await q.answer(f"Video: {CHANGE_VIDEO_FORMAT_OPT[s['video']]}")
@@ -74,52 +75,46 @@ async def toggle_cb(client: Client, q: CallbackQuery):
     elif q.data == "toggle_post":
         s["post"] = (s["post"] + 1) % len(POST_OPT)
         await q.answer(f"Post: {POST_OPT[s['post']]}")
+    elif q.data == "set_waiting_sub":
+        WAITING_SUB[uid] = True
+        status = await client.send_message(uid, "🏢 sᴇɴᴅ .ᴀss ᴏʀ .sʀᴛ ʜᴇʀᴇ ")
+        MEDIA_STORE.setdefault(uid, {})["waiting_msg_id"] = status.id
+        await q.answer("Waiting for subtitle...")
+
     await q.message.edit_reply_markup(build_kb(uid))
 
 
-# --- give file prompt ---
-@Bot.on_callback_query(filters.regex("^give_file$") & filters.user(OWNER_ID))
-async def give_file_prompt(client: Client, q: CallbackQuery):
-    uid = q.from_user.id
-    WAITING_SUB[uid] = True
-    status = await client.send_message(uid, "🏢 Reply with a .srt or .ass subtitle file")
-    MEDIA_STORE.setdefault(uid, {})["waiting_msg_id"] = status.id
-    await q.answer("Send subtitle now.")
-
-
 # --- handle incoming subtitle ---
-@Bot.on_message(
-    filters.user(OWNER_ID) &
-    filters.document &
-    filters.create(lambda _, __, m: m.document and m.document.file_name.lower().endswith((".ass", ".srt")))
-)
-async def receive_sub(client: Client, msg):  
+@Bot.on_message(filters.user(OWNER_ID) & filters.document)
+async def receive_sub(client: Client, msg):
     uid = msg.from_user.id
-    store = MEDIA_STORE.get(uid)
     if not WAITING_SUB.get(uid):
         return
-    if not store or "waiting_msg_id" not in store:
-        return
-    if not msg.reply_to_message or msg.reply_to_message.id != store["waiting_msg_id"]:
-        return
 
+    store = MEDIA_STORE.setdefault(uid, {})
     doc = msg.document
     if not doc or not doc.file_name.lower().endswith((".srt", ".ass")):
         await msg.reply("sᴇɴᴅ .ᴀss ᴏʀ .sʀᴛ ᴅᴏᴄᴜᴍᴇɴᴛ ғɪʟᴇ")
         return
 
     start = time.time()
-    sub_path = await msg.download(file_name=os.path.join(DOWNLOAD_DIR, doc.file_name),
-                                  progress=progress_bar, progress_args=(start, msg, "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ sᴜʙᴛɪᴛʟᴇ..."))
+    sub_path = await msg.download(
+        file_name=os.path.join(DOWNLOAD_DIR, doc.file_name),
+        progress=progress_bar,
+        progress_args=(start, msg, "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ sᴜʙᴛɪᴛʟᴇ...")
+    )
+
     store["sub_path"] = sub_path
+    WAITING_SUB[uid] = False
 
     try:
-        await client.delete_messages(uid, store["waiting_msg_id"])
+        if "waiting_msg_id" in store:
+            await client.delete_messages(uid, store["waiting_msg_id"])
         await msg.delete()
     except:
         pass
-    await client.send_message(uid, f"sᴜʙᴛɪᴛʟᴇ sᴀᴠᴇᴅ {os.path.basename(sub_path)}")
-    WAITING_SUB[uid] = False
+
+    await client.send_message(uid, f"sᴜʙᴛɪᴛʟᴇ sᴀᴠᴇᴅ: {os.path.basename(sub_path)}")
 
 
 # --- confirm & run ---
