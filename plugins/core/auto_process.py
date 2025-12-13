@@ -88,15 +88,10 @@ async def give_file_prompt(client: Client, q: CallbackQuery):
 
 
 # --- handle incoming subtitle ---
-'''@Bot.on_message(
+@Bot.on_message(
     filters.user(OWNER_ID) &
-    filters.document &
-    filters.create(lambda _, __, m: 
-        WAITING_SUB.get(m.from_user.id) and
-        m.document and
-        m.document.file_name.lower().endswith((".srt", ".ass"))
-    )
-)'''
+    (filters.video | (filters.document & filters.create(lambda _, __, m: m.document and (m.document.file_name.endswith((".ass", ".srt"))))))
+)
 async def receive_sub(client: Client, msg):
     uid = msg.from_user.id
     store = MEDIA_STORE.get(uid)
