@@ -53,10 +53,10 @@ async def show_auto_process(client: Client, q: CallbackQuery):
     uid = q.from_user.id
     if uid not in media_obj_store:
         await q.answer("Nᴏ ᴍᴇᴅɪᴀ ʟᴏᴀᴅᴇᴅ!", show_alert=True)
-        return await q.message.edit_text("! ɴᴏ ᴍᴇᴅɪᴀ ғᴏᴜɴᴅ ᴏɴ ᴍᴇᴍᴏʀʏ.")
+        return await safe_edit(q.message, "! ɴᴏ ᴍᴇᴅɪᴀ ғᴏᴜɴᴅ ᴏɴ ᴍᴇᴍᴏʀʏ.")
     get_state(uid)
     MEDIA_STORE.setdefault(uid, {})
-    await q.message.edit_text("⚙️ sᴇʟᴇᴄᴛ ᴏᴘᴛɪᴏɴs ᴀɴᴅ ᴘʀᴏᴄᴇᴇᴅ", reply_markup=build_kb(uid))
+    await safe_edit(q.message, "⚙️ sᴇʟᴇᴄᴛ ᴏᴘᴛɪᴏɴs ᴀɴᴅ ᴘʀᴏᴄᴇᴇᴅ", reply_markup=build_kb(uid))
     await q.answer()
 
 
@@ -81,7 +81,10 @@ async def toggle_cb(client: Client, q: CallbackQuery):
         MEDIA_STORE.setdefault(uid, {})["waiting_msg_id"] = status.id
         await q.answer("Waiting for subtitle...")
 
-    await q.message.edit_reply_markup(build_kb(uid))
+    # only update markup if different to avoid MESSAGE_NOT_MODIFIED
+    new_kb = build_kb(uid)
+    if q.message.reply_markup != new_kb:
+        await safe_edit_reply_markup(q.message, new_kb)
 
 
 # --- handle incoming subtitle ---
@@ -94,7 +97,7 @@ async def receive_sub(client: Client, msg):
     store = MEDIA_STORE.setdefault(uid, {})
     doc = msg.document
     if not doc or not doc.file_name.lower().endswith((".srt", ".ass")):
-        await msg.reply("sᴇɴᴅ .ᴀss ᴏʀ .sʀᴛ ᴅᴏᴄᴜᴍᴇɴᴛ ғɪʟᴇ")
+        await safe_reply(msg, "sᴇɴᴅ .ᴀss ᴏʀ .sʀᴛ ᴅᴏᴄᴜᴍᴇɴᴛ ғɪʟᴇ")
         return
 
     start = time.time()
@@ -109,12 +112,12 @@ async def receive_sub(client: Client, msg):
 
     try:
         if "waiting_msg_id" in store:
-            await client.delete_messages(uid, store["waiting_msg_id"])
-        await msg.delete()
+            await safe_delete(client, uid, store["waiting_msg_id"])
+        await safe_delete_msg(msg)
     except:
         pass
 
-    await client.send_message(uid, f"sᴜʙᴛɪᴛʟᴇ sᴀᴠᴇᴅ: {os.path.basename(sub_path)}")
+    await safe_reply(client, msg, f"sᴜʙᴛɪᴛʟᴇ sᴀᴠᴇᴅ: {os.path.basename(sub_path)}")
 
 
 # --- confirm & run ---
@@ -126,7 +129,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
         await q.answer("ɴᴏ ᴍᴇᴅɪᴀ ғᴏᴜɴᴅ", show_alert=True)
         return
     msg_obj = media_obj_store[uid]
-    status = await q.message.edit_text("ᴘʀᴏᴄᴇssɪɴɢ...")
+    status = await safe_edit(q.message, "ᴘʀᴏᴄᴇssɪɴɢ...")
 
     tmp_files = []
     try:
@@ -138,7 +141,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
             video_path = os.path.join(DOWNLOAD_DIR, video_name)
             video_path = await msg_obj.download(file_name=video_path,
                                                 progress=progress_bar,
-                                                progress_args=(start, q.message, "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴠɪᴅᴇᴏ..."))
+                                                progress_args=(start, status, "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴠɪᴅᴇᴏ..."))
             msg_obj.downloaded_file = video_path
         tmp_files.append(video_path)
 
@@ -148,7 +151,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
             target_video_ui = CHANGE_VIDEO_FORMAT_OPT[state["video"]]
             target_video = VIDEO_EXT_MAP[target_video_ui]
             out_video = os.path.splitext(video_path)[0] + f".{target_video}"
-            await q.message.edit_text(f"ᴄᴏɴᴠᴇʀᴛɪɴɢ ᴠɪᴅᴇᴏ ᴛᴏ {target_video} ...")
+            await safe_edit(status, f"ᴄᴏɴᴠᴇʀᴛɪɴɢ ᴠɪᴅᴇᴏ ᴛᴏ {target_video} ...")
             success, rc, out, err = await run_cmd(["ffmpeg", "-i", video_path, "-c", "copy", out_video])
             if not success or not os.path.exists(out_video):
                 raise RuntimeError(f"ᴠɪᴅᴇᴏ ᴄᴏɴᴠᴇʀᴛɪᴏɴ ғᴀɪʟᴇᴅ: {err}")
@@ -164,7 +167,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
             target_sub_ext = ui_map.get(target_sub)
 
             if cur_ext != target_sub_ext:
-                await q.message.edit_text(f"ᴄᴏɴᴠᴇʀᴛɪɴɢ sᴜʙᴛɪᴛʟᴇ ᴛᴏ {target_sub} ...")
+                await safe_edit(status, f"ᴄᴏɴᴠᴇʀᴛɪɴɢ sᴜʙᴛɪᴛʟᴇ ᴛᴏ {target_sub} ...")
                 new_sub = await change_sub_format(sub_path, target_sub_ext, DOWNLOAD_DIR)
                 if not os.path.exists(new_sub):
                     raise RuntimeError("sᴜʙᴛɪᴛʟᴇ ᴄᴏɴᴠᴇʀᴛɪᴏɴ ғᴀɪʟᴇᴅ")
@@ -173,7 +176,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
 
             # attach subtitle
             out_final = os.path.splitext(video_path)[0] + ".final" + os.path.splitext(video_path)[1]
-            await q.message.edit_text("🔗 ᴀᴅᴅɪɴɢ sᴜʙᴛɪᴛʟᴇ ᴛᴏ ᴠɪᴅᴇᴏ...")
+            await safe_edit(status, "🔗 ᴀᴅᴅɪɴɢ sᴜʙᴛɪᴛʟᴇ ᴛᴏ ᴠɪᴅᴇᴏ...")
             cmd = [
                 "ffmpeg", "-y",
                 "-i", video_path,
@@ -194,13 +197,47 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
             tmp_files.append(out_final)
 
         MEDIA_STORE.setdefault(uid, {})["output_path"] = video_path
-        await q.message.edit_text(f"ᴅᴏɴᴇ ᴏᴜᴛᴘᴜᴛ: {os.path.basename(video_path)}")
+        await safe_edit(status, f"ᴅᴏɴᴇ ᴏᴜᴛᴘᴜᴛ: {os.path.basename(video_path)}")
 
     except Exception as e:
         log.exception("ᴀᴜᴛᴏ ᴘʀᴏᴄᴇss ғᴀɪʟᴇᴅ")
-        await q.message.edit_text(f"ᴇʀʀᴏʀ: {str(e)[:100]}")
+        await safe_edit(status, f"ᴇʀʀᴏʀ: {str(e)[:100]}")
 
     finally:
         # cleanup
         to_remove = [f for f in tmp_files if f != MEDIA_STORE.get(uid, {}).get("output_path")]
         await cleanup_system(None, uid, to_remove)
+
+
+# --- SAFE MESSAGE HELPERS ---
+async def safe_edit(message, text, **kwargs):
+    try:
+        if message and (message.text != text or kwargs.get("reply_markup")):
+            return await message.edit_text(text, **kwargs)
+    except:
+        return
+
+async def safe_edit_reply_markup(message, markup):
+    try:
+        if message and message.reply_markup != markup:
+            return await message.edit_reply_markup(markup)
+    except:
+        return
+
+async def safe_delete(client, uid, msg_id):
+    try:
+        await client.delete_messages(uid, msg_id)
+    except:
+        return
+
+async def safe_delete_msg(msg):
+    try:
+        await msg.delete()
+    except:
+        return
+
+async def safe_reply(client, msg, text):
+    try:
+        return await client.send_message(msg.chat.id, text)
+    except:
+        return
