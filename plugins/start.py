@@ -125,16 +125,22 @@ async def force_reply_episode(client: Bot, message: Message):
     except ValueError:
         await message.reply("ᴠᴀʟᴜᴇ ᴇʀʀᴏʀ")
 
-@Client.on_message(filters.command("convert") & filters.reply & filters.user(OWNER_ID))
+@Bot.on_message(filters.command("convert") & filters.user(OWNER_ID))
 async def convert_cmd(client, message):
+    # must be a reply
+    if not message.reply_to_message:
+        return await message.reply_text("ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴛᴇʟᴇɢʀᴀᴍ ғɪʟᴇ (.srt or .ass) ᴛᴏ ᴄᴏɴᴠᴇʀᴛ")
+
     r = message.reply_to_message
 
-    # check subtitle file
+    # check if it's a subtitle file
     if not r.document or not r.document.file_name.lower().endswith((".srt", ".ass")):
         return await message.reply_text("ʀᴇᴘʟʏ ᴡɪᴛʜ ᴀɴ ᴀss ᴏʀ sʀᴛ ғɪʟᴇ")
 
-    media_obj_store[message.from_user.id] = r  # save subtitle message
+    # save the message object for later use
+    media_obj_store[message.from_user.id] = r
 
+    # show options to convert
     await message.reply_photo(
         START_PHOTO,
         caption="sᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ",
