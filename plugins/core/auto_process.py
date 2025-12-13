@@ -90,14 +90,17 @@ async def give_file_prompt(client: Client, q: CallbackQuery):
 # --- handle incoming subtitle ---
 @Bot.on_message(
     filters.user(OWNER_ID) &
-    (filters.video | (filters.document & filters.create(lambda _, __, m: m.document and (m.document.file_name.endswith((".ass", ".srt"))))))
+    filters.document &
+    filters.create(lambda _, __, m: m.document and m.document.file_name.lower().endswith((".ass", ".srt")))
 )
-async def receive_sub(client: Client, msg):
+async def receive_sub(client: Client, msg):  
     uid = msg.from_user.id
     store = MEDIA_STORE.get(uid)
+    if not WAITING_SUB.get(uid):
+        return
     if not store or "waiting_msg_id" not in store:
         return
-    if not msg.reply_to_message or msg.reply_to_message.message_id != store["waiting_msg_id"]:
+    if not msg.reply_to_message or msg.reply_to_message.id != store["waiting_msg_id"]:
         return
 
     doc = msg.document
@@ -147,7 +150,8 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
         # --- change video format ---
         target_video = CHANGE_VIDEO_FORMAT_OPT[state["video"]]
         if target_video != "🚫":
-            target_video = VIDEO_EXT_MAP[target_video_ui]  # "mkv" or "mp4"
+            target_video_ui = CHANGE_VIDEO_FORMAT_OPT[state["video"]]
+            target_video = VIDEO_EXT_MAP[target_video_ui]
             out_video = os.path.splitext(video_path)[0] + f".{target_video}"
             await q.message.edit_text(f"ᴄᴏɴᴠᴇʀᴛɪɴɢ ᴠɪᴅᴇᴏ ᴛᴏ {target_video} ...")
             success, rc, out, err = await run_cmd(["ffmpeg", "-i", video_path, "-c", "copy", out_video])
@@ -161,9 +165,12 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
         target_sub = CHANGE_SUB_FORMAT_OPT[state["sub"]]
         if sub_path and target_sub != "🚫":
             cur_ext = os.path.splitext(sub_path)[1].lower().lstrip(".")
-            if cur_ext != target_sub:
+            ui_map = {"ᴀss": "ass", "sʀᴛ": "srt"}
+            target_sub_ext = ui_map.get(target_sub)
+
+            if cur_ext != target_sub_ext:
                 await q.message.edit_text(f"ᴄᴏɴᴠᴇʀᴛɪɴɢ sᴜʙᴛɪᴛʟᴇ ᴛᴏ {target_sub} ...")
-                new_sub = await change_sub_format(sub_path, target_sub, DOWNLOAD_DIR)
+                new_sub = await change_sub_format(sub_path, target_sub_ext, DOWNLOAD_DIR)
                 if not os.path.exists(new_sub):
                     raise RuntimeError("sᴜʙᴛɪᴛʟᴇ ᴄᴏɴᴠᴇʀᴛɪᴏɴ ғᴀɪʟᴇᴅ")
                 sub_path = new_sub
@@ -181,7 +188,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
                 "-map", "0", "-map", "1",
                 "-c", "copy",
                 "-metadata:s", 'title="HeavenlySubs"',
-                "-metadata:s", "language=eng",
+                "-metadata:s:s:0", "language=eng",
                 "-disposition:s", "default",
                 out_final
             ]
