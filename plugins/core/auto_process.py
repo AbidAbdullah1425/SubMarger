@@ -89,22 +89,34 @@ async def receive_sub(client: Client, msg):
     doc = msg.document
     if not doc.file_name.lower().endswith((".srt", ".ass")):
         return await msg.reply_text("ᴏɴʟʏ .ᴀss ᴏʀ .sʀᴛ ᴀʟʟᴏᴡᴇᴅ")
+ 
+    try:
+        db_msg = await client.copy_message(
+            chat_id=DB_CHANNEL,
+            from_chat_id=msg.chat.id,
+            message_id=msg.id
+        )
+    except Exception as e:
+        log.exception("Failed to copy subtitle to DB channel")
+        await msg.reply_text(f"Failed to copy subtitle to DB channel: {str(e)[:100]}")
+        return  # stop processing if copy fails
 
     status = await msg.reply_text("ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ sᴜʙ...")
     start = time.time()
 
-    sub_path = await msg.download(
-        os.path.join(DOWNLOAD_DIR, doc.file_name),
-        progress=progress_bar,
-        progress_args=(start, status, "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ sᴜʙᴛɪᴛʟᴇ..")
-    )
+    if db_msg:
+        sub_path = await msg.download(
+            os.path.join(DOWNLOAD_DIR, doc.file_name),
+            progress=progress_bar,
+            progress_args=(start, status, "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ sᴜʙᴛɪᴛʟᴇ..")
+        )
 
-    MEDIA_STORE.setdefault(uid, {})["sub_path"] = sub_path
-    WAITING_SUB[uid] = False
+        MEDIA_STORE.setdefault(uid, {})["sub_path"] = sub_path
+        WAITING_SUB[uid] = False
 
-    # delete progress/sub messages
-    await status.delete()
-    await msg.delete()
+        # delete progress/sub messages
+        await status.delete()
+        await msg.delete()
 
 
 # ---------- confirm & process ----------
