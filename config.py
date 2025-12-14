@@ -23,7 +23,7 @@ FONT = os.environ.get("FONT", "Assist/Font/OathBold.otf")
 STICKER_ID = os.environ.get("STICKER_ID", "CAACAgUAAxkBAAIJZGfLOdpxPmkKJ_nlJICh0bmi7GF1AALLFwACWARYVg4ubUgM9uuVNgQ")
 PORT = os.environ.get("PORT", "8080")
 TG_BOT_WORKERS = int(os.environ.get("TG_BOT_WORKERS", "1"))
-LOG_FILE_NAME = "filesharingbot.txt"
+LOG_FILE_NAME = "logs.txt"
 START_PHOTO = "https://envs.sh/-s2.jpg"
 START_MSG = "<blockquote>ᴡᴇʟᴄᴏᴍᴇ ᴏɴʟʏɴᴏᴄᴏ ,</blockquote>\n\n<blockquote>sᴇɴᴅ ᴛʜᴇ ᴠɪᴅᴇᴏ ғɪʟᴇ ᴀɴᴅ sᴇʟᴇᴄᴛ ᴛʜᴇ ᴏᴘᴛɪᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴍᴇ ᴛᴏ ᴅᴏ ғᴏʀ ᴜ</blockquote>"
 logging.basicConfig(
