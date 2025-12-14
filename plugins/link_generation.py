@@ -18,7 +18,7 @@ async def generate_link(client, file_message):
         base64_string = await encode(f"get-{msg_id * abs(DB_CHANNEL)}")
         link = f"https://t.me/{BOT_USERNAME}?start={base64_string}"
         reply_markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton("• ᴅᴏᴡɴʟᴏᴀᴅ  ᴡᴀᴛᴄʜ •", url=f'https://telegram.me/share/url?url={link}')]
+            [InlineKeyboardButton("• ᴅᴏᴡɴʟᴏᴀᴅ ‹› ᴡᴀᴛᴄʜ •", url=f'https://telegram.me/share/url?url={link}')]
         ])
         return link, reply_markup
     except Exception as e:
