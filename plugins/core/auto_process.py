@@ -122,6 +122,7 @@ async def receive_sub(client: Client, msg):
 # ---------- confirm & process ----------
 @Bot.on_callback_query(filters.regex("^confirm$") & filters.user(OWNER_ID))
 async def confirm_and_run(client: Client, q: CallbackQuery):
+    status = None
     uid = q.from_user.id
     state = get_state(uid)
     client_obj = client  # use the client instance itself for filename/episode
@@ -158,6 +159,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
         # --- handle subtitle ---
         sub_path = MEDIA_STORE.get(uid, {}).get("sub_path")
         if sub_path:
+            tmp_files.append(sub_path)
             cmd = [
                 "ffmpeg", "-y",
                 "-i", video_path,
