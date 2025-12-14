@@ -214,7 +214,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
                 
                 # generate link
                 try:
-                    file_link = await generate_link(client, db_msg)
+                    file_link, keyboard = await generate_link(client, db_msg)
                 except Exception as e:
                     log.exception("Link generation failed")
                     await status.edit_text(f"ʟɪɴᴋ ɢᴇɴᴇʀᴀᴛɪᴏɴ ғᴀɪʟᴇᴅ: {str(e)[:100]}")
@@ -231,9 +231,9 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
                     f"**◆   Synopsis: __In a land where no magic is present. A land where the strong make the rules and weak have to obey...[Read More](https://myanimelist.net/anime/36491/Doupo_Cangqiong)__**\n"
                 )
                 
-                keyboard = InlineKeyboardMarkup(
+                '''keyboard = InlineKeyboardMarkup(
                     [[InlineKeyboardButton("• ᴅᴏᴡɴʟᴏᴀᴅ ‹› ᴡᴀᴛᴄʜ •", url=file_link)]]
-                )
+                )'''
 
                 await client.send_photo(
                     MAIN_CHANNEL,
