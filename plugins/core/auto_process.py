@@ -1,6 +1,7 @@
 import os, time
 from bot import Bot
 from pyrogram import Client, filters
+from pyrogram.errors import MessageNotModified
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from plugins.ffmpeg import run_cmd
 from plugins.core.change_sub_format import change_sub_format
@@ -58,12 +59,8 @@ async def show_auto_process(client: Client, q: CallbackQuery):
     await q.answer()
 
 
-# ---------- toggles ----------
-def kb_callback_data(kb):
-    if not kb:
-        return None
-    return [[btn.callback_data for btn in row] for row in kb.inline_keyboard]
 
+# ---------- toggles ----------
 @Bot.on_callback_query(filters.regex("^(toggle_video|toggle_sub|toggle_post|set_waiting_sub)$") & filters.user(OWNER_ID))
 async def toggle_cb(client: Client, q: CallbackQuery):
     uid = q.from_user.id
@@ -80,12 +77,12 @@ async def toggle_cb(client: Client, q: CallbackQuery):
         m = await client.send_message(uid, "🏢 sᴇɴᴅ .ᴀss ᴏʀ .sʀᴛ ʜᴇʀᴇ")
         MEDIA_STORE.setdefault(uid, {})["waiting_msg_id"] = m.id
 
+    # safe edit to avoid MessageNotModified
     new_kb = build_kb(uid)
-    old_data = kb_callback_data(q.message.reply_markup)
-    new_data = kb_callback_data(new_kb)
-
-    if old_data != new_data:
+    try:
         await q.message.edit_reply_markup(new_kb)
+    except MessageNotModified:
+        pass
 
     await q.answer()
 
