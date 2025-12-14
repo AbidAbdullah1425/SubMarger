@@ -204,7 +204,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
                     thumb=client.thumb,
                     caption=None,
                     progress=progress_bar,
-                    progress_args=(time.time(), None, "ᴜᴘʟᴏᴀᴅɪɴɢ ᴛᴏ ᴅʙ ᴄʜᴀɴɴᴇʟ...")
+                    progress_args=(time.time(), status, "ᴜᴘʟᴏᴀᴅɪɴɢ ᴛᴏ ᴅʙ ᴄʜᴀɴɴᴇʟ...")
                 )
                 
                 # generate link
@@ -265,3 +265,8 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
         # cleanup temp files (except final output)
         to_remove = [f for f in tmp_files if f != MEDIA_STORE.get(uid, {}).get("output_path")]
         await cleanup_system(None, uid, to_remove)
+
+        # clear memory for this user
+        MEDIA_STORE.pop(uid, None)
+        AUTO_PS_STATE.pop(uid, None)
+        WAITING_SUB.pop(uid, None)
