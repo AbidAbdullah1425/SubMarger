@@ -76,8 +76,8 @@ async def toggle_cb(client: Client, q: CallbackQuery):
         MEDIA_STORE.setdefault(uid, {})["waiting_msg_id"] = m.id
 
     new_kb = build_kb(uid)
-if q.message.reply_markup != new_kb:
-    await q.message.edit_reply_markup(new_kb)
+    if q.message.reply_markup != new_kb:
+        await q.message.edit_reply_markup(new_kb)
     await q.answer()
 
 
