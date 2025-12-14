@@ -198,10 +198,13 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
         if post_selection == "❇️":
             # --- Upload to database channel & generate link ---
             try:
+                
+                thumb_path = await client.download_media(client.thumb)
+
                 db_msg = await client.send_document(
                     DB_CHANNEL,
                     output_path,
-                    thumb=client.thumb,
+                    thumb=thumb_path,
                     caption=None,
                     progress=progress_bar,
                     progress_args=(time.time(), status, "ᴜᴘʟᴏᴀᴅɪɴɢ ᴛᴏ ᴅʙ ᴄʜᴀɴɴᴇʟ...")
@@ -244,10 +247,13 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
         elif post_selection == "🚫":
             # --- Direct PM to user ---
             try:
+
+                thumb_path = await client.download_media(client.thumb)
+
                 await client.send_document(
                     uid,  # send to owner
                     output_path,
-                    thumb=client.thumb,
+                    thumb=thumb_path,
                     caption=os.path.basename(output_path),
                     progress=progress_bar,
                     progress_args=(time.time(), None, "ᴜᴘʟᴏᴀᴅɪɴɢ...")
