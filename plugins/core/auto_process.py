@@ -59,6 +59,11 @@ async def show_auto_process(client: Client, q: CallbackQuery):
 
 
 # ---------- toggles ----------
+def kb_callback_data(kb):
+    if not kb:
+        return None
+    return [[btn.callback_data for btn in row] for row in kb.inline_keyboard]
+
 @Bot.on_callback_query(filters.regex("^(toggle_video|toggle_sub|toggle_post|set_waiting_sub)$") & filters.user(OWNER_ID))
 async def toggle_cb(client: Client, q: CallbackQuery):
     uid = q.from_user.id
@@ -76,8 +81,12 @@ async def toggle_cb(client: Client, q: CallbackQuery):
         MEDIA_STORE.setdefault(uid, {})["waiting_msg_id"] = m.id
 
     new_kb = build_kb(uid)
-    if q.message.reply_markup != new_kb:
+    old_data = kb_callback_data(q.message.reply_markup)
+    new_data = kb_callback_data(new_kb)
+
+    if old_data != new_data:
         await q.message.edit_reply_markup(new_kb)
+
     await q.answer()
 
 
