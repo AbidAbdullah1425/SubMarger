@@ -219,7 +219,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
                     progress_args=(time.time(), status, "ᴜᴘʟᴏᴀᴅɪɴɢ ᴛᴏ ᴅʙ ᴄʜᴀɴɴᴇʟ...")
                 )
 
-                await status_msg.edit_text("ᴜᴘʟᴏᴀᴅ ғɪɴɪsʜᴇᴅ!")
+                await status.edit_text("ᴜᴘʟᴏᴀᴅ ғɪɴɪsʜᴇᴅ!")
                 
                 # generate link
                 try:
@@ -273,7 +273,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
                     progress_args=(time.time(), status, "ᴜᴘʟᴏᴀᴅɪɴɢ...")
                 )
 
-                await status_msg.edit_text("ᴜᴘʟᴏᴀᴅ ғɪɴɪsʜᴇᴅ!")
+                await status.edit_text("ᴜᴘʟᴏᴀᴅ ғɪɴɪsʜᴇᴅ!")
 
             except Exception as e:
                 log.exception("Failed to send PM to user")
