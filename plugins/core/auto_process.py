@@ -191,7 +191,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
 
         # --- POST TEMPLATE ---
         post_selection = POST_OPT[state["post"]]
-        output_path = final_path
+        output_path = MEDIA_STORE[uid]["output_path"]
         
         if post_selection == "❇️":
             # --- Upload to database channel & generate link ---
