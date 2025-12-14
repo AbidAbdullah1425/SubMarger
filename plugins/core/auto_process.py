@@ -185,7 +185,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
             # --- Upload to database channel & generate link ---
             try:
                 db_msg = await client.send_document(
-                    DB_CHANNEL_ID,
+                    DB_CHANNEL,
                     output_path,
                     thumb=client.thumb,
                     caption=None,
