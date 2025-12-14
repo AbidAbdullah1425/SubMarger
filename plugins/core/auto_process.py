@@ -98,7 +98,7 @@ async def receive_sub(client: Client, msg):
         )
     except Exception as e:
         log.exception("Failed to copy subtitle to DB channel")
-        await msg.reply_text(f"Failed to copy subtitle to DB channel: {str(e)[:100]}")
+        await msg.reply_text(f"ғᴀɪʟᴇᴅ ᴛᴏ ᴄᴏᴘʏ sᴜʙ ғɪʟᴇ ᴛᴏ ᴅʙ ᴄʜᴀɴɴᴇʟ: {str(e)[:100]}")
         return  # stop processing if copy fails
 
     status = await msg.reply_text("ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ sᴜʙ...")
