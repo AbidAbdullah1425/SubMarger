@@ -218,6 +218,8 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
                     progress=progress_bar,
                     progress_args=(time.time(), status, "ᴜᴘʟᴏᴀᴅɪɴɢ ᴛᴏ ᴅʙ ᴄʜᴀɴɴᴇʟ...")
                 )
+
+                await status_msg.edit_text("ᴜᴘʟᴏᴀᴅ ғɪɴɪsʜᴇᴅ!")
                 
                 # generate link
                 try:
@@ -250,6 +252,8 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
                     parse_mode=ParseMode.MARKDOWN
                 )
 
+
+
             except Exception as e:
                 log.exception("Failed to post via DB channel")
                 await status.edit_text(f"ᴜᴘʟᴏᴀᴅ ᴛᴏ ᴅʙ ᴄʜᴀɴɴᴇʟ ғᴀɪʟᴇᴅ: {str(e)[:100]}")
@@ -266,8 +270,11 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
                     thumb=thumb_path,
                     caption=os.path.basename(output_path),
                     progress=progress_bar,
-                    progress_args=(time.time(), None, "ᴜᴘʟᴏᴀᴅɪɴɢ...")
+                    progress_args=(time.time(), status, "ᴜᴘʟᴏᴀᴅɪɴɢ...")
                 )
+
+                await status_msg.edit_text("ᴜᴘʟᴏᴀᴅ ғɪɴɪsʜᴇᴅ!")
+
             except Exception as e:
                 log.exception("Failed to send PM to user")
                 await status.edit_text(f"ᴜᴘʟᴏᴀᴅ ғᴀɪʟᴇᴅ: {str(e)[:100]}")
