@@ -10,28 +10,24 @@ from config import OWNER_ID, DOWNLOAD_DIR, FONT, LOGGER, media_obj_store
 
 log = LOGGER("auto_process.py")
 
-# UI options (index cycles)
 CHANGE_VIDEO_FORMAT_OPT = ["🚫", "ᴍᴋᴠ", "ᴍᴘ4"]
-CHANGE_SUB_FORMAT_OPT = ["🚫", "ᴀss", "sʀᴛ"]
+CHANGE_SUB_FORMAT_OPT   = ["🚫", "ᴀss", "sʀᴛ"]
 POST_OPT = ["🚫", "❇️"]
 
-# Mapping to real extensions
 VIDEO_EXT_MAP = {
     "ᴍᴋᴠ": "mkv",
     "ᴍᴘ4": "mp4",
 }
 
-# State & storage
-AUTO_PS_STATE = {}   # {user_id: {"video":0,"sub":0,"post":0}}
-MEDIA_STORE   = {}   # {user_id: {"video_path":..., "sub_path":..., "output_path":...}}
-WAITING_SUB = {}     # {user_id: True/False}
+AUTO_PS_STATE = {}
+MEDIA_STORE   = {}
+WAITING_SUB   = {}
 
 
-# --- helpers ---
+# ---------- helpers ----------
 def get_state(uid):
-    if uid not in AUTO_PS_STATE:
-        AUTO_PS_STATE[uid] = {"video":0,"sub":0,"post":0}
-    return AUTO_PS_STATE[uid]
+    return AUTO_PS_STATE.setdefault(uid, {"video": 0, "sub": 0, "post": 0})
+
 
 def build_kb(uid):
     s = get_state(uid)
@@ -47,20 +43,21 @@ def build_kb(uid):
     ])
 
 
-# --- show menu ---
+# ---------- menu ----------
 @Bot.on_callback_query(filters.regex("^auto_process$") & filters.user(OWNER_ID))
 async def show_auto_process(client: Client, q: CallbackQuery):
     uid = q.from_user.id
     if uid not in media_obj_store:
-        await q.answer("Nᴏ ᴍᴇᴅɪᴀ ʟᴏᴀᴅᴇᴅ!", show_alert=True)
-        return await safe_edit(q.message, "! ɴᴏ ᴍᴇᴅɪᴀ ғᴏᴜɴᴅ ᴏɴ ᴍᴇᴍᴏʀʏ.")
+        await q.answer("No media loaded", show_alert=True)
+        return
+
     get_state(uid)
     MEDIA_STORE.setdefault(uid, {})
-    await safe_edit(q.message, "⚙️ sᴇʟᴇᴄᴛ ᴏᴘᴛɪᴏɴs ᴀɴᴅ ᴘʀᴏᴄᴇᴇᴅ", reply_markup=build_kb(uid))
+    await q.message.edit_text("⚙️ Select options", reply_markup=build_kb(uid))
     await q.answer()
 
 
-# --- toggles ---
+# ---------- toggles ----------
 @Bot.on_callback_query(filters.regex("^(toggle_video|toggle_sub|toggle_post|set_waiting_sub)$") & filters.user(OWNER_ID))
 async def toggle_cb(client: Client, q: CallbackQuery):
     uid = q.from_user.id
@@ -68,115 +65,84 @@ async def toggle_cb(client: Client, q: CallbackQuery):
 
     if q.data == "toggle_video":
         s["video"] = (s["video"] + 1) % len(CHANGE_VIDEO_FORMAT_OPT)
-        await q.answer(f"Video: {CHANGE_VIDEO_FORMAT_OPT[s['video']]}")
     elif q.data == "toggle_sub":
         s["sub"] = (s["sub"] + 1) % len(CHANGE_SUB_FORMAT_OPT)
-        await q.answer(f"Subtitle: {CHANGE_SUB_FORMAT_OPT[s['sub']]}")
     elif q.data == "toggle_post":
         s["post"] = (s["post"] + 1) % len(POST_OPT)
-        await q.answer(f"Post: {POST_OPT[s['post']]}")
     elif q.data == "set_waiting_sub":
         WAITING_SUB[uid] = True
-        status = await client.send_message(uid, "🏢 sᴇɴᴅ .ᴀss ᴏʀ .sʀᴛ ʜᴇʀᴇ ")
-        MEDIA_STORE.setdefault(uid, {})["waiting_msg_id"] = status.id
-        await q.answer("Waiting for subtitle...")
+        m = await client.send_message(uid, "🏢 Send .ass or .srt")
+        MEDIA_STORE.setdefault(uid, {})["waiting_msg_id"] = m.id
 
-    # only update markup if different to avoid MESSAGE_NOT_MODIFIED
-    new_kb = build_kb(uid)
-    if q.message.reply_markup != new_kb:
-        await safe_edit_reply_markup(q.message, new_kb)
+    await q.message.edit_reply_markup(build_kb(uid))
+    await q.answer()
 
 
-# --- handle incoming subtitle ---
+# ---------- receive subtitle ----------
 @Bot.on_message(filters.user(OWNER_ID) & filters.document)
 async def receive_sub(client: Client, msg):
     uid = msg.from_user.id
     if not WAITING_SUB.get(uid):
         return
 
-    store = MEDIA_STORE.setdefault(uid, {})
     doc = msg.document
-    if not doc or not doc.file_name.lower().endswith((".srt", ".ass")):
-        await safe_reply(msg, "sᴇɴᴅ .ᴀss ᴏʀ .sʀᴛ ᴅᴏᴄᴜᴍᴇɴᴛ ғɪʟᴇ")
-        return
+    if not doc.file_name.lower().endswith((".srt", ".ass")):
+        return await msg.reply_text("Send .ass or .srt only")
 
+    status = await msg.reply_text("⬇️ Downloading subtitle...")
     start = time.time()
+
     sub_path = await msg.download(
-        file_name=os.path.join(DOWNLOAD_DIR, doc.file_name),
+        os.path.join(DOWNLOAD_DIR, doc.file_name),
         progress=progress_bar,
-        progress_args=(start, msg, "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ sᴜʙᴛɪᴛʟᴇ...")
+        progress_args=(start, status, "Downloading subtitle")
     )
 
-    store["sub_path"] = sub_path
+    MEDIA_STORE.setdefault(uid, {})["sub_path"] = sub_path
     WAITING_SUB[uid] = False
 
-    try:
-        if "waiting_msg_id" in store:
-            await safe_delete(client, uid, store["waiting_msg_id"])
-        await safe_delete_msg(msg)
-    except:
-        pass
-
-    await safe_reply(client, msg, f"sᴜʙᴛɪᴛʟᴇ sᴀᴠᴇᴅ: {os.path.basename(sub_path)}")
+    await status.delete()
+    await msg.delete()
+    await client.send_message(uid, f"✅ Subtitle saved: {os.path.basename(sub_path)}")
 
 
-# --- confirm & run ---
+# ---------- confirm ----------
 @Bot.on_callback_query(filters.regex("^confirm$") & filters.user(OWNER_ID))
 async def confirm_and_run(client: Client, q: CallbackQuery):
     uid = q.from_user.id
     state = get_state(uid)
-    if uid not in media_obj_store:
-        await q.answer("ɴᴏ ᴍᴇᴅɪᴀ ғᴏᴜɴᴅ", show_alert=True)
-        return
-    msg_obj = media_obj_store[uid]
-    status = await safe_edit(q.message, "ᴘʀᴏᴄᴇssɪɴɢ...")
 
+    msg_obj = media_obj_store.get(uid)
+    if not msg_obj:
+        return await q.answer("No media", show_alert=True)
+
+    status = await q.message.edit_text("⏳ Processing...")
     tmp_files = []
+
     try:
-        # --- video download ---
-        video_path = getattr(msg_obj, "downloaded_file", None)
-        if not video_path or not os.path.exists(video_path):
-            start = time.time()
-            video_name = f"{int(time.time())}_{msg_obj.document.file_name if msg_obj.document else 'video'}"
-            video_path = os.path.join(DOWNLOAD_DIR, video_name)
-            video_path = await msg_obj.download(file_name=video_path,
-                                                progress=progress_bar,
-                                                progress_args=(start, status, "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴠɪᴅᴇᴏ..."))
-            msg_obj.downloaded_file = video_path
+        # download video
+        start = time.time()
+        video_path = await msg_obj.download(
+            progress=progress_bar,
+            progress_args=(start, status, "Downloading video")
+        )
         tmp_files.append(video_path)
 
-        # --- change video format ---
-        target_video = CHANGE_VIDEO_FORMAT_OPT[state["video"]]
-        if target_video != "🚫":
-            target_video_ui = CHANGE_VIDEO_FORMAT_OPT[state["video"]]
-            target_video = VIDEO_EXT_MAP[target_video_ui]
-            out_video = os.path.splitext(video_path)[0] + f".{target_video}"
-            await safe_edit(status, f"ᴄᴏɴᴠᴇʀᴛɪɴɢ ᴠɪᴅᴇᴏ ᴛᴏ {target_video} ...")
-            success, rc, out, err = await run_cmd(["ffmpeg", "-i", video_path, "-c", "copy", out_video])
-            if not success or not os.path.exists(out_video):
-                raise RuntimeError(f"ᴠɪᴅᴇᴏ ᴄᴏɴᴠᴇʀᴛɪᴏɴ ғᴀɪʟᴇᴅ: {err}")
-            video_path = out_video
-            tmp_files.append(out_video)
+        # convert video
+        ui = CHANGE_VIDEO_FORMAT_OPT[state["video"]]
+        if ui != "🚫":
+            cur = os.path.splitext(video_path)[1].lstrip(".").lower()
+            tgt = VIDEO_EXT_MAP[ui]
+            if cur != tgt:
+                out = os.path.splitext(video_path)[0] + f".{tgt}"
+                await run_cmd(["ffmpeg", "-i", video_path, "-c", "copy", out])
+                video_path = out
+                tmp_files.append(out)
 
-        # --- handle subtitle ---
+        # subtitle
         sub_path = MEDIA_STORE.get(uid, {}).get("sub_path")
-        target_sub = CHANGE_SUB_FORMAT_OPT[state["sub"]]
-        if sub_path and target_sub != "🚫":
-            cur_ext = os.path.splitext(sub_path)[1].lower().lstrip(".")
-            ui_map = {"ᴀss": "ass", "sʀᴛ": "srt"}
-            target_sub_ext = ui_map.get(target_sub)
-
-            if cur_ext != target_sub_ext:
-                await safe_edit(status, f"ᴄᴏɴᴠᴇʀᴛɪɴɢ sᴜʙᴛɪᴛʟᴇ ᴛᴏ {target_sub} ...")
-                new_sub = await change_sub_format(sub_path, target_sub_ext, DOWNLOAD_DIR)
-                if not os.path.exists(new_sub):
-                    raise RuntimeError("sᴜʙᴛɪᴛʟᴇ ᴄᴏɴᴠᴇʀᴛɪᴏɴ ғᴀɪʟᴇᴅ")
-                sub_path = new_sub
-                tmp_files.append(sub_path)
-
-            # attach subtitle
-            out_final = os.path.splitext(video_path)[0] + ".final" + os.path.splitext(video_path)[1]
-            await safe_edit(status, "🔗 ᴀᴅᴅɪɴɢ sᴜʙᴛɪᴛʟᴇ ᴛᴏ ᴠɪᴅᴇᴏ...")
+        if sub_path:
+            out = os.path.splitext(video_path)[0] + ".final" + os.path.splitext(video_path)[1]
             cmd = [
                 "ffmpeg", "-y",
                 "-i", video_path,
@@ -185,59 +151,20 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
                 "-metadata:s:t", "mimetype=application/x-truetype-font",
                 "-map", "0", "-map", "1",
                 "-c", "copy",
-                "-metadata:s", 'title="HeavenlySubs"',
                 "-metadata:s:s:0", "language=eng",
                 "-disposition:s", "default",
-                out_final
+                out
             ]
-            success, rc, out, err = await run_cmd(cmd)
-            if not success or not os.path.exists(out_final):
-                raise RuntimeError(f"ᴀᴅᴅɪɴɢ sᴜʙᴛɪᴛʟᴇ ғᴀɪʟᴇᴅ: {err}")
-            video_path = out_final
-            tmp_files.append(out_final)
+            await run_cmd(cmd)
+            video_path = out
+            tmp_files.append(out)
 
         MEDIA_STORE.setdefault(uid, {})["output_path"] = video_path
-        await safe_edit(status, f"ᴅᴏɴᴇ ᴏᴜᴛᴘᴜᴛ: {os.path.basename(video_path)}")
+        await status.edit_text(f"✅ Done: {os.path.basename(video_path)}")
 
     except Exception as e:
-        log.exception("ᴀᴜᴛᴏ ᴘʀᴏᴄᴇss ғᴀɪʟᴇᴅ")
-        await safe_edit(status, f"ᴇʀʀᴏʀ: {str(e)[:100]}")
+        log.exception("auto process failed")
+        await status.edit_text(str(e))
 
     finally:
-        # cleanup
-        to_remove = [f for f in tmp_files if f != MEDIA_STORE.get(uid, {}).get("output_path")]
-        await cleanup_system(None, uid, to_remove)
-
-
-# --- SAFE MESSAGE HELPERS ---
-async def safe_edit(message, text, **kwargs):
-    try:
-        if message and (message.text != text or kwargs.get("reply_markup")):
-            return await message.edit_text(text, **kwargs)
-    except:
-        return
-
-async def safe_edit_reply_markup(message, markup):
-    try:
-        if message and message.reply_markup != markup:
-            return await message.edit_reply_markup(markup)
-    except:
-        return
-
-async def safe_delete(client, uid, msg_id):
-    try:
-        await client.delete_messages(uid, msg_id)
-    except:
-        return
-
-async def safe_delete_msg(msg):
-    try:
-        await msg.delete()
-    except:
-        return
-
-async def safe_reply(client, msg, text):
-    try:
-        return await client.send_message(msg.chat.id, text)
-    except:
-        return
+        await cleanup_system(None, uid, tmp_files)
