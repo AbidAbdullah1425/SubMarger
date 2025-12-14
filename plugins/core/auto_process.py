@@ -3,6 +3,7 @@ from bot import Bot
 from pyrogram import Client, filters
 from pyrogram.errors import MessageNotModified
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.enums import ParseMode
 from plugins.ffmpeg import run_cmd
 from plugins.core.change_sub_format import change_sub_format
 from plugins.progressbar import progress_bar
@@ -245,7 +246,8 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
                     MAIN_CHANNEL,
                     photo=ANIME_COVER,
                     caption=caption,
-                    reply_markup=keyboard
+                    reply_markup=keyboard,
+                    parse_mode=ParseMode.MARKDOWN
                 )
 
             except Exception as e:
