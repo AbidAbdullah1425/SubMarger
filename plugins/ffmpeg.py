@@ -18,7 +18,7 @@ async def run_cmd(cmd: list):
 
         if rc == 0:
             log.info(f"FFmpeg finished in {elapsed:.2f}s")
-else:
+        else:
             log.error(f"FFmpeg FAILED ({rc}) in {elapsed:.2f}s\n{err.decode()}")
         if out:
             log.debug(f"stdout: {out.decode()}")
