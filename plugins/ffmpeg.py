@@ -16,11 +16,14 @@ async def run_cmd(cmd: list):
         rc = proc.returncode
         elapsed = time.time() - start_time
 
-        log.info(f"Command finished in {elapsed:.2f}s with return code {rc}")
+        if rc == 0:
+            log.info(f"FFmpeg finished in {elapsed:.2f}s")
+else:
+            log.error(f"FFmpeg FAILED ({rc}) in {elapsed:.2f}s\n{err.decode()}")
         if out:
             log.debug(f"stdout: {out.decode()}")
         if err:
-            log.debug(f"stderr: {err.decode()}")
+            log.error(f"FFmpeg stderr:\n{err.decode()}")
 
         success = rc == 0
         return success, rc, out.decode(), err.decode()
