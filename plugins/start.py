@@ -85,6 +85,7 @@ async def media_receiver(client: Client, message: Message):
 
     # store for later use
     client.episode = episode
+    await client.update_settings("episode", client.episode)
 
 
     await client.send_photo(
