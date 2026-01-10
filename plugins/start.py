@@ -69,8 +69,6 @@ async def start_message(client: Client, message: Message):
 async def media_receiver(client: Client, message: Message): 
     media_obj_store[message.from_user.id] = message  # save file data
 
-    
-    filename = None
     if message.document:
         filename = message.document.file_name
     elif message.video:
