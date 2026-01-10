@@ -53,7 +53,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         line = re.sub(r"AnimeXin", "~ [HeavenlySubs]", line, flags=re.I)
 
         if POS_TAG not in line:
-            line = re.sub(r"(,0,,)", r"\1" + POS_TAG, line, count=1)
+    line = re.sub(r"(,0,,)", lambda m: m.group(1) + POS_TAG, line, count=1)
 
         cleaned.append(line)
 
