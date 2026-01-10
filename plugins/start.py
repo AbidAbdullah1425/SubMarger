@@ -3,6 +3,7 @@ import psutil, shutil, re
 from bot import Bot
 from config import OWNER_ID, START_MSG, START_PHOTO, DB_CHANNEL, media_obj_store
 from pyrogram.enums import ParseMode
+from plugins.episode_detection import extract_episode
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, ForceReply
 from plugins.core.auto_process import WAITING_SUB, MEDIA_STORE
 
@@ -67,6 +68,24 @@ async def start_message(client: Client, message: Message):
 )
 async def media_receiver(client: Client, message: Message): 
     media_obj_store[message.from_user.id] = message  # save file data
+
+    
+    filename = None
+    if message.document:
+        filename = message.document.file_name
+    elif message.video:
+        filename = message.video.file_name or "video.mp4"
+
+    # ---- extract episode ----
+    episode = extract_episode(filename)
+
+    if episode is None:
+        await message.reply_text("⚠️ Episode number not detected")
+        return
+
+    # store for later use
+    client.episode = episode
+
 
     await client.send_photo(
         chat_id=message.chat.id,
