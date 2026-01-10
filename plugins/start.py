@@ -79,10 +79,10 @@ async def media_receiver(client: Client, message: Message):
 
     if episode is None:
         await message.reply_text("⚠️ Episode number not detected")
-
-    # store for later use
-    client.episode = episode
-    await client.update_settings("episode", client.episode)
+    else: 
+        # store for later use
+        client.episode = episode
+        await client.update_settings("episode", client.episode)
 
 
     await client.send_photo(
