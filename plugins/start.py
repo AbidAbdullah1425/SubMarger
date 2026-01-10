@@ -74,14 +74,13 @@ async def media_receiver(client: Client, message: Message):
     if message.document:
         filename = message.document.file_name
     elif message.video:
-        filename = message.video.file_name or "video.mp4"
+        filename = message.video.file_name
 
     # ---- extract episode ----
     episode = extract_episode(filename)
 
     if episode is None:
         await message.reply_text("⚠️ Episode number not detected")
-        return
 
     # store for later use
     client.episode = episode
