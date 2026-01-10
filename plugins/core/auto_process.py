@@ -182,7 +182,7 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
             cmd = [
                 "ffmpeg", "-y",
                 "-i", video_path,
-                "-i", sub_path,
+                "-i", cleaned_sub,
                 "-attach", FONT,
                 "-metadata:s:t", "mimetype=application/x-truetype-font",
                 "-map", "0", "-map", "1",
