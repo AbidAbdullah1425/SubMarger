@@ -9,6 +9,7 @@ from plugins.core.change_sub_format import change_sub_format
 from plugins.progressbar import progress_bar
 from plugins.cleanup import cleanup_system
 from plugins.link_generation import generate_link
+from plugins.core.sub_cleaner import clean_ass_subtitle
 from config import OWNER_ID, DOWNLOAD_DIR, FONT, LOGGER, media_obj_store, MAIN_CHANNEL, DB_CHANNEL, ANIME_COVER
 
 log = LOGGER("auto_process.py")
@@ -168,7 +169,16 @@ async def confirm_and_run(client: Client, q: CallbackQuery):
         # --- handle subtitle ---
         sub_path = MEDIA_STORE.get(uid, {}).get("sub_path")
         if sub_path:
+            try:
+                cleaned_sub = clean_ass_subtitle(sub_path)
+            except RuntimeError as e:
+                await status.edit_text(f"❌ sᴜʙᴛɪᴛʟᴇ ᴄʟᴇᴀɴᴜᴘ ғᴀɪʟᴇᴅ\n\n{str(e)}")
+                return  # HARD STOP, no muxing, no posting
+
             tmp_files.append(sub_path)
+            tmp_files.append(cleaned_sub)
+
+
             cmd = [
                 "ffmpeg", "-y",
                 "-i", video_path,
